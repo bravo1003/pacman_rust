@@ -202,7 +202,8 @@ impl<'a> Game<'a> {
     // Individual ghost update methods to avoid borrowing issues
     fn update_blinky(&mut self) {
         let ghost = self.blinky.get_ghost_mut();
-        ghost.update_status(self.timed_status);
+        ghost.update_speed(self.pacman.is_energized());
+        ghost.update_status(self.pacman.is_energized(), self.timed_status);
 
         for _ in 0..ghost.entity.get_speed() {
             ghost.update_facing(self.pacman.is_energized());
@@ -220,7 +221,8 @@ impl<'a> Game<'a> {
 
     fn update_inky(&mut self) {
         let ghost = self.inky.get_ghost_mut();
-        ghost.update_status(self.timed_status);
+        ghost.update_speed(self.pacman.is_energized());
+        ghost.update_status(self.pacman.is_energized(), self.timed_status);
 
         for _ in 0..ghost.entity.get_speed() {
             ghost.update_facing(self.pacman.is_energized());
@@ -238,7 +240,8 @@ impl<'a> Game<'a> {
 
     fn update_pinky(&mut self) {
         let ghost = self.pinky.get_ghost_mut();
-        ghost.update_status(self.timed_status);
+        ghost.update_speed(self.pacman.is_energized());
+        ghost.update_status(self.pacman.is_energized(), self.timed_status);
 
         for _ in 0..ghost.entity.get_speed() {
             ghost.update_facing(self.pacman.is_energized());
@@ -256,7 +259,8 @@ impl<'a> Game<'a> {
 
     fn update_clyde(&mut self) {
         let ghost = self.clyde.get_ghost_mut();
-        ghost.update_status(self.timed_status);
+        ghost.update_speed(self.pacman.is_energized());
+        ghost.update_status(self.pacman.is_energized(), self.timed_status);
 
         for _ in 0..ghost.entity.get_speed() {
             ghost.update_facing(self.pacman.is_energized());

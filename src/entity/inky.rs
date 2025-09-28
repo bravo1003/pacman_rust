@@ -12,8 +12,10 @@ impl<'a> Inky<'a> {
     pub fn new(
         texture_creator: &'a sdl2::render::TextureCreator<sdl2::video::WindowContext>,
     ) -> Result<Self, Box<dyn std::error::Error>> {
-        let scatter_target =
-            Position::new((27 * BLOCK_SIZE_24) as i16, (35 * BLOCK_SIZE_24) as i16);
+        let scatter_target = Position::new(
+            (26 * BLOCK_SIZE_24 + BLOCK_SIZE_24 / 2) as i16,
+            (35 * BLOCK_SIZE_24 + BLOCK_SIZE_24 / 2) as i16
+        );
         let home_position = Position::new(
             (11 * BLOCK_SIZE_24 + BLOCK_SIZE_24 / 2) as i16,
             (17 * BLOCK_SIZE_24 + BLOCK_SIZE_24 / 2) as i16,

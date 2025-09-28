@@ -194,8 +194,46 @@ impl<'a> Ghost<'a> {
         }
     }
 
-    pub fn update_status(&mut self, timed_status: bool) {
-        self.status = timed_status;
+    pub fn update_speed(&mut self, pacman_is_energized: bool) {
+        // C++ UpdateSpeed logic
+        if !self.entity.is_alive() && self.entity.get_speed() != 6 {
+            self.entity.mod_speed(6); // Dead ghosts move fast to get home
+            return;
+        }
+        
+        if pacman_is_energized {
+            if self.entity.get_speed() != 1 {
+                self.entity.mod_speed(1); // Frightened ghosts move slower
+            }
+        } else {
+            if self.entity.get_speed() != 2 {
+                self.entity.mod_speed(2); // Normal ghost speed
+            }
+        }
+    }
+
+    pub fn update_status(&mut self, pacman_is_energized: bool, timed_status: bool) {
+        // C++ UpdateStatus logic: if pacman is energized, force scatter mode (status = true)
+        if pacman_is_energized {
+            if !self.status {
+                self.status = true; // Force scatter mode when pacman is energized
+            }
+            return;
+        }
+        
+        // When not energized, use normal timed status (chase/scatter cycle)
+        match timed_status {
+            false => {
+                if self.status {
+                    self.status = false; // Switch to chase mode
+                }
+            }
+            true => {
+                if !self.status {
+                    self.status = true; // Switch to scatter mode
+                }
+            }
+        }
     }
 
     pub fn update_facing(&mut self, pacman_is_energized: bool) {

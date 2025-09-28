@@ -12,7 +12,10 @@ impl<'a> Blinky<'a> {
     pub fn new(
         texture_creator: &'a sdl2::render::TextureCreator<sdl2::video::WindowContext>,
     ) -> Result<Self, Box<dyn std::error::Error>> {
-        let scatter_target = Position::new((25 * BLOCK_SIZE_24) as i16, 0);
+        let scatter_target = Position::new(
+            (25 * BLOCK_SIZE_24 + BLOCK_SIZE_24 / 2) as i16,
+            (BLOCK_SIZE_24 / 2) as i16
+        );
         let home_position = Position::new(
             (13 * BLOCK_SIZE_24 + BLOCK_SIZE_24 / 2) as i16,
             (17 * BLOCK_SIZE_24 + BLOCK_SIZE_24 / 2) as i16,
