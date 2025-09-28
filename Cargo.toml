@@ -1,0 +1,8 @@
+[package]
+name = "rust_pacman"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+sdl2 = { version = "0.35.2", features = ["image", "ttf", "mixer"] }
+rand = "0.8.5"
