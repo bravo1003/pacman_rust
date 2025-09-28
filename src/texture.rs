@@ -2,7 +2,7 @@ use sdl2::pixels::Color;
 use sdl2::rect::Rect;
 use sdl2::render::{Texture, TextureCreator, WindowCanvas};
 use sdl2::surface::Surface;
-use sdl2::ttf::{Font, Sdl2TtfContext};
+use sdl2::ttf::Font;
 use sdl2::video::WindowContext;
 use std::path::Path;
 
@@ -108,7 +108,7 @@ impl<'a> LTexture<'a> {
     ) -> Result<(), Box<dyn std::error::Error>> {
         self.render_with_facing(canvas, x, y, 0, clip)
     }
-    
+
     pub fn render_with_facing(
         &self,
         canvas: &mut WindowCanvas,
@@ -129,7 +129,7 @@ impl<'a> LTexture<'a> {
             // Convert facing to SDL angle (like C++ version)
             let angle = match facing {
                 0 => 0.0,   // Right
-                1 => 90.0,  // Down  
+                1 => 90.0,  // Down
                 2 => 180.0, // Left
                 3 => 270.0, // Up
                 _ => 0.0,
@@ -156,4 +156,3 @@ impl<'a> LTexture<'a> {
         self.height
     }
 }
-

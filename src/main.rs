@@ -1,8 +1,6 @@
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 use sdl2::pixels::Color;
-use sdl2::render::TextureCreator;
-use sdl2::video::WindowContext;
 use std::time::{Duration, Instant};
 
 mod board;
@@ -41,8 +39,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let _image_context = sdl2::image::init(sdl2::image::InitFlag::PNG)?;
 
     // Initialize SDL2_ttf
-    let ttf_context = sdl2::ttf::init()
-        .map_err(|e| format!("SDL2_TTF initialization failed: {}", e))?;
+    let ttf_context =
+        sdl2::ttf::init().map_err(|e| format!("SDL2_TTF initialization failed: {}", e))?;
 
     let window = video_subsystem
         .window("Pacman", WINDOW_WIDTH, WINDOW_HEIGHT)
