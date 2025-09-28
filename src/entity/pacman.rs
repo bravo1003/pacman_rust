@@ -1,7 +1,7 @@
 use crate::board::{BlockType, Direction, EntityType};
 use crate::entity::{BaseEntity, Entity};
 use crate::position::Position;
-use crate::texture::LTexture;
+use crate::texture::GameTexture;
 use crate::{BLOCK_SIZE_24, BLOCK_SIZE_32, BOARD_WIDTH};
 use sdl2::rect::Rect;
 use sdl2::render::{TextureCreator, WindowCanvas};
@@ -15,8 +15,8 @@ pub struct Pacman<'a> {
     pub entity: BaseEntity,
 
     // Textures for sprites
-    living_pac: LTexture<'a>,
-    death_pac: LTexture<'a>,
+    living_pac: GameTexture<'a>,
+    death_pac: GameTexture<'a>,
 
     // Animation frames (like C++ SpriteClips)
     living_pac_sprite_clips: [Rect; LIVING_PAC_FRAMES],
@@ -37,8 +37,8 @@ impl<'a> Pacman<'a> {
     ) -> Result<Self, Box<dyn std::error::Error>> {
         let mut pacman = Pacman {
             entity: BaseEntity::new(EntityType::PacMan),
-            living_pac: LTexture::new(),
-            death_pac: LTexture::new(),
+            living_pac: GameTexture::new(),
+            death_pac: GameTexture::new(),
             living_pac_sprite_clips: [Rect::new(0, 0, 0, 0); LIVING_PAC_FRAMES],
             death_pac_sprite_clips: [Rect::new(0, 0, 0, 0); DEATH_PAC_FRAMES],
             curr_living_pac_frame: 0,

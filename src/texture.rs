@@ -6,15 +6,15 @@ use sdl2::ttf::Font;
 use sdl2::video::WindowContext;
 use std::path::Path;
 
-pub struct LTexture<'a> {
+pub struct GameTexture<'a> {
     texture: Option<Texture<'a>>,
     width: u32,
     height: u32,
 }
 
-impl<'a> LTexture<'a> {
+impl<'a> GameTexture<'a> {
     pub fn new() -> Self {
-        LTexture {
+        GameTexture {
             texture: None,
             width: 0,
             height: 0,

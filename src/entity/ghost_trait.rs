@@ -1,7 +1,7 @@
 use crate::board::{BlockType, Direction, EntityType};
 use crate::entity::{BaseEntity, Entity};
 use crate::position::Position;
-use crate::texture::LTexture;
+use crate::texture::GameTexture;
 use crate::{BLOCK_SIZE_24, BLOCK_SIZE_32, WINDOW_WIDTH};
 use sdl2::pixels::Color;
 use sdl2::rect::Rect;
@@ -34,8 +34,8 @@ pub const GHOST_EYE_FRAMES: usize = 4;
 // Base Ghost struct that all ghosts will use
 pub struct Ghost<'a> {
     pub entity: BaseEntity,
-    pub body: LTexture<'a>,
-    pub eyes: LTexture<'a>,
+    pub body: GameTexture<'a>,
+    pub eyes: GameTexture<'a>,
     pub ghost_body_sprite_clips: [Rect; GHOST_BODY_FRAMES],
     pub ghost_eye_sprite_clips: [Rect; GHOST_EYE_FRAMES],
     pub color: Color,
@@ -56,8 +56,8 @@ impl<'a> Ghost<'a> {
         home_position: Position,
         texture_creator: &'a sdl2::render::TextureCreator<sdl2::video::WindowContext>,
     ) -> Result<Self, Box<dyn std::error::Error>> {
-        let mut body = LTexture::new();
-        let mut eyes = LTexture::new();
+        let mut body = GameTexture::new();
+        let mut eyes = GameTexture::new();
 
         // Load ghost textures
         body.load_from_file(texture_creator, "assets/GhostBody32.png")?;
@@ -67,7 +67,7 @@ impl<'a> Ghost<'a> {
         let ghost_body_sprite_clips = [
             Rect::new(0, 0, BLOCK_SIZE_32 as u32, BLOCK_SIZE_32 as u32),
             Rect::new(
-                BLOCK_SIZE_32,
+                BLOCK_SIZE_32 as i32,
                 0,
                 BLOCK_SIZE_32,
                 BLOCK_SIZE_32,

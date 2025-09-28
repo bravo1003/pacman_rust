@@ -1,4 +1,4 @@
-use crate::texture::LTexture;
+use crate::texture::GameTexture;
 use crate::{
     BLOCK_SIZE_24, BLOCK_SIZE_32, BOARD_HEIGHT, BOARD_WIDTH, WHITE, WINDOW_HEIGHT, WINDOW_WIDTH,
 };
@@ -41,17 +41,17 @@ pub struct Board<'a> {
     is_extra: bool,
 
     // Textures (like C++ version)
-    map_texture: LTexture<'a>,
-    pellet_texture: LTexture<'a>,
-    energizer_texture: LTexture<'a>,
-    door_texture: LTexture<'a>,
-    lives_texture: LTexture<'a>,
+    map_texture: GameTexture<'a>,
+    pellet_texture: GameTexture<'a>,
+    energizer_texture: GameTexture<'a>,
+    door_texture: GameTexture<'a>,
+    lives_texture: GameTexture<'a>,
 
     // Score textures (like C++ version)
-    score_word_texture: LTexture<'a>,
-    score_texture: LTexture<'a>,
-    high_score_word_texture: LTexture<'a>,
-    high_score_texture: LTexture<'a>,
+    score_word_texture: GameTexture<'a>,
+    score_texture: GameTexture<'a>,
+    high_score_word_texture: GameTexture<'a>,
+    high_score_texture: GameTexture<'a>,
 }
 
 impl<'a> Board<'a> {
@@ -106,15 +106,15 @@ impl<'a> Board<'a> {
             score: 0,
             lives: 4,
             is_extra: false,
-            map_texture: LTexture::new(),
-            pellet_texture: LTexture::new(),
-            energizer_texture: LTexture::new(),
-            door_texture: LTexture::new(),
-            lives_texture: LTexture::new(),
-            score_word_texture: LTexture::new(),
-            score_texture: LTexture::new(),
-            high_score_word_texture: LTexture::new(),
-            high_score_texture: LTexture::new(),
+            map_texture: GameTexture::new(),
+            pellet_texture: GameTexture::new(),
+            energizer_texture: GameTexture::new(),
+            door_texture: GameTexture::new(),
+            lives_texture: GameTexture::new(),
+            score_word_texture: GameTexture::new(),
+            score_texture: GameTexture::new(),
+            high_score_word_texture: GameTexture::new(),
+            high_score_texture: GameTexture::new(),
         };
 
         // Load textures (like C++ version)
@@ -304,5 +304,17 @@ impl<'a> Board<'a> {
             WHITE,
         )?;
         Ok(())
+    }
+
+    // NEW: Decrease lives method (like C++ version)
+    pub fn decrease_lives(&mut self) {
+        if self.lives > 0 {
+            self.lives -= 1;
+        }
+    }
+
+    // NEW: Score increase by specific value (for ghost scores)
+    pub fn score_increase_by_value(&mut self, value: u16) {
+        self.score += value as u32;
     }
 }
