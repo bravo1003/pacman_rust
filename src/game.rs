@@ -201,18 +201,24 @@ impl<'a> Game<'a> {
 
     // Individual ghost update methods to avoid borrowing issues
     fn update_blinky(&mut self) {
+        let pacman_pos = self.pacman.get_position();
+
+        // First check if we should calculate target and do it if needed
+        let should_calculate = {
+            let ghost = self.blinky.get_ghost_mut();
+            ghost.should_calculate_normal_target(self.pacman.is_energized())
+        };
+
+        if should_calculate {
+            self.blinky.calculate_target(pacman_pos, None);
+        }
+
         let ghost = self.blinky.get_ghost_mut();
         ghost.update_speed(self.pacman.is_energized());
         ghost.update_status(self.pacman.is_energized(), self.timed_status);
 
         for _ in 0..ghost.entity.get_speed() {
             ghost.update_facing(self.pacman.is_energized());
-
-            // Check if we should use normal AI target (or home exit logic)
-            if ghost.should_calculate_normal_target(self.pacman.is_energized()) {
-                // Normal AI targeting already set by calculate_target
-            }
-
             ghost.calculate_direction(&self.actual_map);
             ghost.entity.move_entity(ghost.entity.get_direction());
             ghost.entity.check_wrap();
@@ -220,18 +226,25 @@ impl<'a> Game<'a> {
     }
 
     fn update_inky(&mut self) {
+        let pacman_pos = self.pacman.get_position();
+        let blinky_pos = self.blinky.get_ghost().entity.get_position();
+
+        // First check if we should calculate target and do it if needed
+        let should_calculate = {
+            let ghost = self.inky.get_ghost_mut();
+            ghost.should_calculate_normal_target(self.pacman.is_energized())
+        };
+
+        if should_calculate {
+            self.inky.calculate_target(pacman_pos, Some(blinky_pos));
+        }
+
         let ghost = self.inky.get_ghost_mut();
         ghost.update_speed(self.pacman.is_energized());
         ghost.update_status(self.pacman.is_energized(), self.timed_status);
 
         for _ in 0..ghost.entity.get_speed() {
             ghost.update_facing(self.pacman.is_energized());
-
-            // Check if we should use normal AI target (or home exit logic)
-            if ghost.should_calculate_normal_target(self.pacman.is_energized()) {
-                // Normal AI targeting already set by calculate_target
-            }
-
             ghost.calculate_direction(&self.actual_map);
             ghost.entity.move_entity(ghost.entity.get_direction());
             ghost.entity.check_wrap();
@@ -239,18 +252,24 @@ impl<'a> Game<'a> {
     }
 
     fn update_pinky(&mut self) {
+        let pacman_pos = self.pacman.get_position();
+
+        // First check if we should calculate target and do it if needed
+        let should_calculate = {
+            let ghost = self.pinky.get_ghost_mut();
+            ghost.should_calculate_normal_target(self.pacman.is_energized())
+        };
+
+        if should_calculate {
+            self.pinky.calculate_target(pacman_pos, None);
+        }
+
         let ghost = self.pinky.get_ghost_mut();
         ghost.update_speed(self.pacman.is_energized());
         ghost.update_status(self.pacman.is_energized(), self.timed_status);
 
         for _ in 0..ghost.entity.get_speed() {
             ghost.update_facing(self.pacman.is_energized());
-
-            // Check if we should use normal AI target (or home exit logic)
-            if ghost.should_calculate_normal_target(self.pacman.is_energized()) {
-                // Normal AI targeting already set by calculate_target
-            }
-
             ghost.calculate_direction(&self.actual_map);
             ghost.entity.move_entity(ghost.entity.get_direction());
             ghost.entity.check_wrap();
@@ -258,18 +277,24 @@ impl<'a> Game<'a> {
     }
 
     fn update_clyde(&mut self) {
+        let pacman_pos = self.pacman.get_position();
+
+        // First check if we should calculate target and do it if needed
+        let should_calculate = {
+            let ghost = self.clyde.get_ghost_mut();
+            ghost.should_calculate_normal_target(self.pacman.is_energized())
+        };
+
+        if should_calculate {
+            self.clyde.calculate_target(pacman_pos, None);
+        }
+
         let ghost = self.clyde.get_ghost_mut();
         ghost.update_speed(self.pacman.is_energized());
         ghost.update_status(self.pacman.is_energized(), self.timed_status);
 
         for _ in 0..ghost.entity.get_speed() {
             ghost.update_facing(self.pacman.is_energized());
-
-            // Check if we should use normal AI target (or home exit logic)
-            if ghost.should_calculate_normal_target(self.pacman.is_energized()) {
-                // Normal AI targeting already set by calculate_target
-            }
-
             ghost.calculate_direction(&self.actual_map);
             ghost.entity.move_entity(ghost.entity.get_direction());
             ghost.entity.check_wrap();
@@ -575,23 +600,9 @@ impl<'a> Game<'a> {
     /// Update all entity positions (like C++ Game::UpdatePositions())
     fn update_positions(&mut self) {
         // Update ghosts
-        let pacman_pos = self.pacman.get_position();
-        let blinky_pos = self.blinky.get_ghost().entity.get_position();
-
-        // Update Blinky
-        self.blinky.calculate_target(pacman_pos, None);
         self.update_blinky();
-
-        // Update Inky (needs Blinky position)
-        self.inky.calculate_target(pacman_pos, Some(blinky_pos));
         self.update_inky();
-
-        // Update Pinky
-        self.pinky.calculate_target(pacman_pos, None);
         self.update_pinky();
-
-        // Update Clyde
-        self.clyde.calculate_target(pacman_pos, None);
         self.update_clyde();
 
         // Update Pacman

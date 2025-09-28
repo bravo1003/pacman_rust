@@ -124,6 +124,26 @@ impl<'a> Ghost<'a> {
 
     // Common ghost methods
 
+    /// Check if ghost is in energized home containment (oscillating while energized)
+    pub fn is_in_energized_home_containment(&self, pacman_energized: bool) -> bool {
+        if !pacman_energized || !self.entity.is_alive() {
+            return false;
+        }
+
+        // Check if ghost is in the oscillation area (expanded home bounds)
+        let x = self.entity.position.x;
+        let y = self.entity.position.y;
+
+        // X must be in home X range
+        if x > (11 * BLOCK_SIZE_24) as i16 && x < (17 * BLOCK_SIZE_24) as i16 {
+            // Y can be in extended range for oscillation (one block above normal home)
+            if y > (14 * BLOCK_SIZE_24) as i16 && y < (18 * BLOCK_SIZE_24) as i16 {
+                return true;
+            }
+        }
+        false
+    }
+
     /// Check if ghost is in home area (like C++ IsHome())
     pub fn is_home(&self) -> bool {
         let x = self.entity.position.x;
@@ -200,6 +220,15 @@ impl<'a> Ghost<'a> {
         // C++ UpdateSpeed logic
         if !self.entity.is_alive() && self.entity.get_speed() != 6 {
             self.entity.mod_speed(6); // Dead ghosts move fast to get home
+            return;
+        }
+
+        // Special case: newly resurrected ghosts at home should get normal speed
+        // even when pacman is energized (they just came back to life)
+        if self.is_home() && self.entity.is_alive() {
+            if self.entity.get_speed() != 2 {
+                self.entity.mod_speed(2); // Resurrected ghosts get normal speed
+            }
             return;
         }
 
@@ -369,8 +398,11 @@ impl<'a> Ghost<'a> {
         let x = (self.entity.get_x() - 4) as i32;
         let y = (self.entity.get_y() - 4) as i32;
 
-        if pacman_is_energized && self.entity.is_alive() && !self.is_home() {
-            // C++ Draw logic: set blue color and handle blinking near end
+        if pacman_is_energized
+            && self.entity.is_alive()
+            && !self.is_in_energized_home_containment(pacman_is_energized)
+        {
+            // C++ Draw logic: Only blue if energized AND alive AND not in home/containment area
             self.body.set_color(0, 0, 255)?;
 
             // Blinking effect in last 2 seconds (like C++ mGhostTimer.GetTicks() > mTimerTarget - 2000)
@@ -386,6 +418,7 @@ impl<'a> Ghost<'a> {
                 self.eyes.set_color(255, 255, 255)?; // White eyes
             }
         } else {
+            // Normal coloring: original ghost color, white eyes
             self.body
                 .set_color(self.color.r, self.color.g, self.color.b)?;
             self.eyes.set_color(255, 255, 255)?;
