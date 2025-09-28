@@ -14,14 +14,20 @@ impl<'a> Inky<'a> {
     ) -> Result<Self, Box<dyn std::error::Error>> {
         let scatter_target = Position::new(
             (26 * BLOCK_SIZE_24 + BLOCK_SIZE_24 / 2) as i16,
-            (35 * BLOCK_SIZE_24 + BLOCK_SIZE_24 / 2) as i16
+            (35 * BLOCK_SIZE_24 + BLOCK_SIZE_24 / 2) as i16,
         );
         let home_position = Position::new(
             (11 * BLOCK_SIZE_24 + BLOCK_SIZE_24 / 2) as i16,
             (17 * BLOCK_SIZE_24 + BLOCK_SIZE_24 / 2) as i16,
         );
         let color = Color::RGB(0, 255, 255); // Cyan
-        let ghost = Ghost::new(color, EntityType::Inky, scatter_target, home_position, texture_creator)?;
+        let ghost = Ghost::new(
+            color,
+            EntityType::Inky,
+            scatter_target,
+            home_position,
+            texture_creator,
+        )?;
 
         Ok(Inky { ghost })
     }

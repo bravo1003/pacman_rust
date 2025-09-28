@@ -2,12 +2,12 @@ use std::time::Instant;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum GameState {
-    Ready,        // Show "READY!" text before game starts
-    Playing,      // Normal gameplay
-    PacmanDeath,  // Pacman death animation
-    GameOver,     // All lives lost
-    LevelComplete,// All pellets eaten - map flashing animation
-    Paused,       // Game paused with space
+    Ready,         // Show "READY!" text before game starts
+    Playing,       // Normal gameplay
+    PacmanDeath,   // Pacman death animation
+    GameOver,      // All lives lost
+    LevelComplete, // All pellets eaten - map flashing animation
+    Paused,        // Game paused with space
 }
 
 /// Timer utility similar to C++ Timer class
@@ -71,7 +71,8 @@ impl GameTimer {
         if let Some(start) = self.start_time {
             if self.is_paused {
                 if let Some(pause_time) = self.pause_time {
-                    return self.accumulated_time + start.elapsed().as_millis() - pause_time.elapsed().as_millis();
+                    return self.accumulated_time + start.elapsed().as_millis()
+                        - pause_time.elapsed().as_millis();
                 }
             }
             return self.accumulated_time + start.elapsed().as_millis();

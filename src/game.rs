@@ -4,7 +4,7 @@ use crate::game_state::{GameState, GameTimer};
 use crate::pacman::Pacman;
 use crate::position::Position;
 use crate::texture::GameTexture;
-use crate::{BOARD_HEIGHT, BOARD_WIDTH, RED, WHITE, YELLOW};
+use crate::{BOARD_HEIGHT, BOARD_WIDTH, RED, YELLOW};
 use sdl2::keyboard::Keycode;
 use sdl2::render::{TextureCreator, WindowCanvas};
 use sdl2::ttf::{Font, Sdl2TtfContext};
@@ -380,18 +380,30 @@ impl<'a> Game<'a> {
         // Draw entities (except during level complete animation)
         if self.game_state != GameState::LevelComplete {
             // Draw ghosts first (like C++ version - ghosts drawn before Pacman)
-            self.blinky
-                .get_ghost_mut()
-                .draw(canvas, self.pacman.is_energized())?;
-            self.inky
-                .get_ghost_mut()
-                .draw(canvas, self.pacman.is_energized())?;
-            self.pinky
-                .get_ghost_mut()
-                .draw(canvas, self.pacman.is_energized())?;
-            self.clyde
-                .get_ghost_mut()
-                .draw(canvas, self.pacman.is_energized())?;
+            self.blinky.get_ghost_mut().draw(
+                canvas,
+                self.pacman.is_energized(),
+                self.ghost_timer.get_ticks(),
+                self.ghost_timer_target,
+            )?;
+            self.inky.get_ghost_mut().draw(
+                canvas,
+                self.pacman.is_energized(),
+                self.ghost_timer.get_ticks(),
+                self.ghost_timer_target,
+            )?;
+            self.pinky.get_ghost_mut().draw(
+                canvas,
+                self.pacman.is_energized(),
+                self.ghost_timer.get_ticks(),
+                self.ghost_timer_target,
+            )?;
+            self.clyde.get_ghost_mut().draw(
+                canvas,
+                self.pacman.is_energized(),
+                self.ghost_timer.get_ticks(),
+                self.ghost_timer_target,
+            )?;
 
             // Draw floating scores (like C++ Game::DrawLittleScore())
             self.draw_little_score();

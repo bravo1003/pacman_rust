@@ -14,14 +14,20 @@ impl<'a> Blinky<'a> {
     ) -> Result<Self, Box<dyn std::error::Error>> {
         let scatter_target = Position::new(
             (25 * BLOCK_SIZE_24 + BLOCK_SIZE_24 / 2) as i16,
-            (BLOCK_SIZE_24 / 2) as i16
+            (BLOCK_SIZE_24 / 2) as i16,
         );
         let home_position = Position::new(
             (13 * BLOCK_SIZE_24 + BLOCK_SIZE_24 / 2) as i16,
             (17 * BLOCK_SIZE_24 + BLOCK_SIZE_24 / 2) as i16,
         );
         let color = Color::RGB(255, 0, 0); // Red
-        let ghost = Ghost::new(color, EntityType::Blinky, scatter_target, home_position, texture_creator)?;
+        let ghost = Ghost::new(
+            color,
+            EntityType::Blinky,
+            scatter_target,
+            home_position,
+            texture_creator,
+        )?;
 
         Ok(Blinky { ghost })
     }

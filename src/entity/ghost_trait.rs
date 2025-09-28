@@ -29,7 +29,7 @@ pub enum GhostType {
 
 // Common ghost constants
 pub const GHOST_BODY_FRAMES: usize = 2;
-pub const GHOST_EYE_FRAMES: usize = 4;
+pub const GHOST_EYE_FRAMES: usize = 5; // 4 directional + 1 frightened
 
 // Base Ghost struct that all ghosts will use
 pub struct Ghost<'a> {
@@ -66,15 +66,10 @@ impl<'a> Ghost<'a> {
         // Initialize body sprite clips
         let ghost_body_sprite_clips = [
             Rect::new(0, 0, BLOCK_SIZE_32 as u32, BLOCK_SIZE_32 as u32),
-            Rect::new(
-                BLOCK_SIZE_32 as i32,
-                0,
-                BLOCK_SIZE_32,
-                BLOCK_SIZE_32,
-            ),
+            Rect::new(BLOCK_SIZE_32 as i32, 0, BLOCK_SIZE_32, BLOCK_SIZE_32),
         ];
 
-        // Initialize eye sprite clips (Right, Up, Left, Down)
+        // Initialize eye sprite clips (Right, Up, Left, Down, Frightened)
         let ghost_eye_sprite_clips = [
             Rect::new(0, 0, BLOCK_SIZE_32 as u32, BLOCK_SIZE_32 as u32),
             Rect::new(
@@ -91,6 +86,12 @@ impl<'a> Ghost<'a> {
             ),
             Rect::new(
                 3 * BLOCK_SIZE_32 as i32,
+                0,
+                BLOCK_SIZE_32 as u32,
+                BLOCK_SIZE_32 as u32,
+            ),
+            Rect::new(
+                4 * BLOCK_SIZE_32 as i32,
                 0,
                 BLOCK_SIZE_32 as u32,
                 BLOCK_SIZE_32 as u32,
@@ -139,18 +140,19 @@ impl<'a> Ghost<'a> {
 
     /// Determines if normal AI target calculation should be used (like C++ IsTargetToCalculate())
     pub fn should_calculate_normal_target(&mut self, pacman_energized: bool) -> bool {
-        // If dead, target home
+        // C++ Logic: Dead ghosts always target home and resurrect immediately when reaching it
         if !self.entity.is_alive() {
             self.can_use_door = true;
             self.target = self.home;
             if self.entity.position.x == self.home.x && self.entity.position.y == self.home.y {
-                self.entity.mod_life_statement(true);
+                self.entity.mod_life_statement(true); // ✅ Always resurrect immediately (C++ behavior)
             }
             return false;
         }
 
-        // If in home and pacman is energized, do special home movement
+        // C++ Logic: If alive, in home, and pacman is energized - do oscillation and stay trapped!
         if self.is_home() && pacman_energized {
+            // Oscillate up and down within home (like C++ logic)
             if self.entity.position.x == self.home.x && self.entity.position.y == self.home.y {
                 self.target.y = self.home.y - BLOCK_SIZE_24 as i16;
             } else if self.entity.position.x == self.home.x
@@ -158,17 +160,17 @@ impl<'a> Ghost<'a> {
             {
                 self.target.y = self.home.y;
             }
-            return false;
+            return false; // IMPORTANT: Prevent exit while energized!
         }
 
-        // If in home and alive, target door to exit (THE KEY LOGIC!)
+        // C++ Logic: If alive, in home, and NOT energized - allow exit via door
         if self.is_home() && self.entity.is_alive() {
             self.can_use_door = true;
             self.target = self.door_target;
             return false; // Don't use normal AI targeting
         }
 
-        // Outside home - use normal AI
+        // Outside home - use normal AI (chase/scatter)
         self.can_use_door = false;
         match self.status {
             false => true, // Chase mode - calculate target
@@ -200,7 +202,7 @@ impl<'a> Ghost<'a> {
             self.entity.mod_speed(6); // Dead ghosts move fast to get home
             return;
         }
-        
+
         if pacman_is_energized {
             if self.entity.get_speed() != 1 {
                 self.entity.mod_speed(1); // Frightened ghosts move slower
@@ -220,7 +222,7 @@ impl<'a> Ghost<'a> {
             }
             return;
         }
-        
+
         // When not energized, use normal timed status (chase/scatter cycle)
         match timed_status {
             false => {
@@ -256,7 +258,7 @@ impl<'a> Ghost<'a> {
                 };
                 self.entity.mod_facing(facing);
             } else {
-                self.entity.mod_facing(0);
+                self.entity.mod_facing(4); // C++ uses facing 4 for frightened ghosts
             }
             return;
         }
@@ -361,23 +363,42 @@ impl<'a> Ghost<'a> {
         &mut self,
         canvas: &mut WindowCanvas,
         pacman_is_energized: bool,
+        ghost_timer_ticks: u128,
+        ghost_timer_target: u32,
     ) -> Result<(), Box<dyn std::error::Error>> {
         let x = (self.entity.get_x() - 4) as i32;
         let y = (self.entity.get_y() - 4) as i32;
 
         if pacman_is_energized && self.entity.is_alive() && !self.is_home() {
+            // C++ Draw logic: set blue color and handle blinking near end
             self.body.set_color(0, 0, 255)?;
-            self.eyes.set_color(255, 255, 255)?;
+
+            // Blinking effect in last 2 seconds (like C++ mGhostTimer.GetTicks() > mTimerTarget - 2000)
+            if ghost_timer_ticks > (ghost_timer_target as u128 - 2000) {
+                // Blink every 250ms (like C++ (mGhostTimer.GetTicks() / 250) % 2 == 1)
+                if (ghost_timer_ticks / 250) % 2 == 1 {
+                    self.body.set_color(255, 255, 255)?; // White body
+                    self.eyes.set_color(255, 0, 0)?; // Red eyes
+                } else {
+                    self.eyes.set_color(255, 255, 255)?; // White eyes (body stays blue)
+                }
+            } else {
+                self.eyes.set_color(255, 255, 255)?; // White eyes
+            }
         } else {
             self.body
                 .set_color(self.color.r, self.color.g, self.color.b)?;
             self.eyes.set_color(255, 255, 255)?;
         }
 
-        let body_clip = &self.ghost_body_sprite_clips
-            [(self.current_body_frame / 8) as usize % GHOST_BODY_FRAMES];
-        self.body.render(canvas, x, y, Some(*body_clip))?;
+        // Render body only if alive (like C++ version)
+        if self.entity.is_alive() {
+            let body_clip = &self.ghost_body_sprite_clips
+                [(self.current_body_frame / 8) as usize % GHOST_BODY_FRAMES];
+            self.body.render(canvas, x, y, Some(*body_clip))?;
+        }
 
+        // Always render eyes (like C++ version)
         let eye_frame = self.entity.get_facing() as usize;
         let eye_frame = if eye_frame >= GHOST_EYE_FRAMES {
             0
@@ -387,6 +408,7 @@ impl<'a> Ghost<'a> {
         let eye_clip = &self.ghost_eye_sprite_clips[eye_frame];
         self.eyes.render(canvas, x, y, Some(*eye_clip))?;
 
+        // Update animation frame
         self.current_body_frame = (self.current_body_frame + 1) % (GHOST_BODY_FRAMES as u8 * 8);
         Ok(())
     }

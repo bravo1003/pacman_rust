@@ -14,14 +14,20 @@ impl<'a> Clyde<'a> {
     ) -> Result<Self, Box<dyn std::error::Error>> {
         let scatter_target = Position::new(
             (BLOCK_SIZE_24 / 2) as i16,
-            (35 * BLOCK_SIZE_24 + BLOCK_SIZE_24 / 2) as i16
+            (35 * BLOCK_SIZE_24 + BLOCK_SIZE_24 / 2) as i16,
         );
         let home_position = Position::new(
             (15 * BLOCK_SIZE_24 + BLOCK_SIZE_24 / 2) as i16,
             (17 * BLOCK_SIZE_24 + BLOCK_SIZE_24 / 2) as i16,
         );
         let color = Color::RGB(255, 165, 0); // Orange
-        let ghost = Ghost::new(color, EntityType::Clyde, scatter_target, home_position, texture_creator)?;
+        let ghost = Ghost::new(
+            color,
+            EntityType::Clyde,
+            scatter_target,
+            home_position,
+            texture_creator,
+        )?;
 
         Ok(Clyde { ghost })
     }

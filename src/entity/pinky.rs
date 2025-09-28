@@ -14,14 +14,20 @@ impl<'a> Pinky<'a> {
     ) -> Result<Self, Box<dyn std::error::Error>> {
         let scatter_target = Position::new(
             (2 * BLOCK_SIZE_24 + BLOCK_SIZE_24 / 2) as i16,
-            (BLOCK_SIZE_24 / 2) as i16
+            (BLOCK_SIZE_24 / 2) as i16,
         );
         let home_position = Position::new(
             (13 * BLOCK_SIZE_24 + BLOCK_SIZE_24 / 2) as i16,
             (17 * BLOCK_SIZE_24 + BLOCK_SIZE_24 / 2) as i16,
         );
         let color = Color::RGB(255, 192, 203); // Pink
-        let ghost = Ghost::new(color, EntityType::Pinky, scatter_target, home_position, texture_creator)?;
+        let ghost = Ghost::new(
+            color,
+            EntityType::Pinky,
+            scatter_target,
+            home_position,
+            texture_creator,
+        )?;
 
         Ok(Pinky { ghost })
     }
