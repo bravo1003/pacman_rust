@@ -44,6 +44,7 @@ pub struct Game<'a> {
     // NEW: Animation and effects
     ready_texture: GameTexture<'a>,
     game_over_texture: GameTexture<'a>,
+    paused_texture: GameTexture<'a>,
     little_score_timers: Vec<GameTimer>,
     little_score_positions: Vec<Position>,
     little_score_values: Vec<u16>,
@@ -52,7 +53,6 @@ pub struct Game<'a> {
     // NEW: Level management
     level: u16,
 
-    // NEW: Sound flags (like C++ Game)
     is_to_scatter_sound: bool,
     is_to_waka_sound: bool,
     is_to_death_sound: bool,
@@ -108,6 +108,14 @@ impl<'a> Game<'a> {
             RED,
         )?;
 
+        let mut paused_texture = GameTexture::new();
+        paused_texture.load_from_rendered_text(
+            texture_creator,
+            "PAUSED",
+            &ttf_context.load_font("assets/emulogic.ttf", 24)?,
+            RED,
+        )?;
+
         let mut game_timer = GameTimer::new();
         game_timer.start();
 
@@ -140,6 +148,7 @@ impl<'a> Game<'a> {
             // Animation and effects
             ready_texture,
             game_over_texture,
+            paused_texture,
             little_score_timers: Vec::new(),
             little_score_positions: Vec::new(),
             little_score_values: Vec::new(),
@@ -148,7 +157,6 @@ impl<'a> Game<'a> {
             // Level management
             level: 1,
 
-            // Sound flags
             is_to_scatter_sound: true,
             is_to_waka_sound: true,
             is_to_death_sound: true,
@@ -170,7 +178,6 @@ impl<'a> Game<'a> {
                 self.mover.push(Direction::Down);
             }
             Keycode::Space => {
-                // Space key toggles pause/resume (like C++ version)
                 match self.game_state {
                     GameState::Playing => {
                         self.game_state = GameState::Paused;
@@ -367,7 +374,6 @@ impl<'a> Game<'a> {
     }
 
     pub fn update(&mut self) {
-        // Use the new game state machine
         self.process();
     }
 
@@ -392,10 +398,13 @@ impl<'a> Game<'a> {
                     .render(canvas, 11 * 24, 20 * 24 - 5, None)?;
             }
             GameState::GameOver => {
-                // Show "GAME OVER" text (like C++ Game::Draw())
                 self.game_over_texture
                     .render(canvas, 9 * 24, 20 * 24 - 5, None)?;
-                return Ok(()); // Don't draw entities when game over
+                return Ok(());
+            }
+            GameState::Paused => {
+                self.paused_texture
+                    .render(canvas, 11 * 24, 20 * 24 - 5, None)?;
             }
             _ => {
                 // Normal gameplay - draw entities

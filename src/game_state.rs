@@ -2,15 +2,14 @@ use std::time::Instant;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum GameState {
-    Ready,         // Show "READY!" text before game starts
-    Playing,       // Normal gameplay
-    PacmanDeath,   // Pacman death animation
-    GameOver,      // All lives lost
-    LevelComplete, // All pellets eaten - map flashing animation
-    Paused,        // Game paused with space
+    Ready,
+    Playing,
+    PacmanDeath,
+    GameOver,
+    LevelComplete,
+    Paused,
 }
 
-/// Timer utility similar to C++ Timer class
 #[derive(Debug, Clone)]
 pub struct GameTimer {
     start_time: Option<Instant>,

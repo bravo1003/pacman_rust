@@ -120,13 +120,11 @@ impl<'a> GameTexture<'a> {
         if let Some(ref texture) = self.texture {
             let mut render_quad = Rect::new(x, y, self.width, self.height);
 
-            // Set clip rendering dimensions
             if let Some(clip_rect) = clip {
                 render_quad.set_width(clip_rect.width());
                 render_quad.set_height(clip_rect.height());
             }
 
-            // Convert facing to SDL angle (like C++ version)
             let angle = match facing {
                 0 => 0.0,   // Right
                 1 => 90.0,  // Down

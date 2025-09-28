@@ -40,7 +40,6 @@ pub struct Board<'a> {
     lives: i8,
     is_extra: bool,
 
-    // Textures (like C++ version)
     map_texture: GameTexture<'a>,
     pellet_texture: GameTexture<'a>,
     energizer_texture: GameTexture<'a>,
@@ -145,7 +144,6 @@ impl<'a> Board<'a> {
             WHITE,
         )?;
 
-        // Set map color to blue (like C++ version)
         board.map_texture.set_color(0x00, 0x00, 0xff)?;
 
         board.convert_sketch();
@@ -181,7 +179,6 @@ impl<'a> Board<'a> {
         actual_map.copy_from_slice(&self.numeric_board);
     }
 
-    // Reset entity position based on board layout (like C++ ResetPosition)
     pub fn reset_position(&self, entity_type: EntityType) -> crate::position::Position {
         let chars: Vec<char> = Self::CHAR_BOARD.chars().collect();
 
@@ -249,11 +246,10 @@ impl<'a> Board<'a> {
             }
         }
 
-        // Render lives (like C++ version - rendered at bottom)
         for i in 1..=self.lives {
             if i > 0 {
-                let lives_x = (i as u32 * BLOCK_SIZE_32) as i32; // i * BlockSize32
-                let lives_y = (26 * BLOCK_SIZE_32 - BLOCK_SIZE_32 / 4) as i32; // 26 * BlockSize32 - BlockSize32/4
+                let lives_x = (i as u32 * BLOCK_SIZE_32) as i32;
+                let lives_y = (26 * BLOCK_SIZE_32 - BLOCK_SIZE_32 / 4) as i32;
                 self.lives_texture.render(canvas, lives_x, lives_y, None)?;
             }
         }
@@ -271,13 +267,12 @@ impl<'a> Board<'a> {
 
     pub fn score_increase(&mut self, points: u16) {
         match points {
-            0 => self.score += 10, // Pellet
-            1 => self.score += 50, // Energizer
+            0 => self.score += 10,
+            1 => self.score += 50,
             _ => self.score += points as u32,
         }
     }
 
-    // Score management methods (like C++ version)
     pub fn set_score(
         &mut self,
         texture_creator: &'a TextureCreator<WindowContext>,

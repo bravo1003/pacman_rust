@@ -164,8 +164,16 @@ impl<'a> Ghost<'a> {
         if !self.entity.is_alive() {
             self.can_use_door = true;
             self.target = self.home;
+
             if self.entity.position.x == self.home.x && self.entity.position.y == self.home.y {
-                self.entity.mod_life_statement(true); // ✅ Always resurrect immediately (C++ behavior)
+                self.entity.mod_life_statement(true);
+            } else {
+                let dx = (self.entity.position.x - self.home.x).abs();
+                let dy = (self.entity.position.y - self.home.y).abs();
+                if dx <= 2 && dy <= 2 {
+                    self.entity.mod_life_statement(true);
+                    self.entity.set_position(self.home);
+                }
             }
             return false;
         }
@@ -217,28 +225,25 @@ impl<'a> Ghost<'a> {
     }
 
     pub fn update_speed(&mut self, pacman_is_energized: bool) {
-        // C++ UpdateSpeed logic
         if !self.entity.is_alive() && self.entity.get_speed() != 6 {
-            self.entity.mod_speed(6); // Dead ghosts move fast to get home
+            self.entity.mod_speed(6);
             return;
         }
 
-        // Special case: newly resurrected ghosts at home should get normal speed
-        // even when pacman is energized (they just came back to life)
         if self.is_home() && self.entity.is_alive() {
             if self.entity.get_speed() != 2 {
-                self.entity.mod_speed(2); // Resurrected ghosts get normal speed
+                self.entity.mod_speed(2);
             }
             return;
         }
 
         if pacman_is_energized {
             if self.entity.get_speed() != 1 {
-                self.entity.mod_speed(1); // Frightened ghosts move slower
+                self.entity.mod_speed(1);
             }
         } else {
             if self.entity.get_speed() != 2 {
-                self.entity.mod_speed(2); // Normal ghost speed
+                self.entity.mod_speed(2);
             }
         }
     }

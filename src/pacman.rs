@@ -7,26 +7,21 @@ use sdl2::rect::Rect;
 use sdl2::render::{TextureCreator, WindowCanvas};
 use sdl2::video::WindowContext;
 
-// Constants from C++ version
 const LIVING_PAC_FRAMES: usize = 3;
 const DEATH_PAC_FRAMES: usize = 10;
 
 pub struct Pacman<'a> {
     pub entity: BaseEntity,
 
-    // Textures for sprites
     living_pac: GameTexture<'a>,
     death_pac: GameTexture<'a>,
 
-    // Animation frames (like C++ SpriteClips)
     living_pac_sprite_clips: [Rect; LIVING_PAC_FRAMES],
     death_pac_sprite_clips: [Rect; DEATH_PAC_FRAMES],
 
-    // Animation state
     curr_living_pac_frame: u8,
     curr_death_pac_frame: u8,
 
-    // Game state
     energy_status: bool,
     dead_animation_statement: bool,
 }
@@ -70,7 +65,6 @@ impl<'a> Pacman<'a> {
             counter += BLOCK_SIZE_32 as i32;
         }
 
-        // Death Pac frames
         counter = 0;
         for i in 0..DEATH_PAC_FRAMES {
             self.death_pac_sprite_clips[i] = Rect::new(counter, 0, BLOCK_SIZE_32, BLOCK_SIZE_32);
@@ -78,7 +72,6 @@ impl<'a> Pacman<'a> {
         }
     }
 
-    // Update position based on input (like C++ UpdatePos)
     pub fn update_pos(&mut self, mover: &mut Vec<Direction>, actual_map: &[BlockType]) {
         if mover.is_empty() {
             return;
@@ -99,7 +92,6 @@ impl<'a> Pacman<'a> {
                 self.wall_collision_frame();
             }
 
-            // Handle second input if different from first (like C++ version)
             if mover.len() > 1 && mover[0] != mover[1] {
                 let (temp_x, temp_y) = self.entity.get_possible_position(mover[1]);
 
@@ -111,7 +103,7 @@ impl<'a> Pacman<'a> {
                     self.entity.move_entity(mover[1]);
                     self.set_facing(mover[1]);
                     self.entity.mod_direction(mover[1]);
-                    mover.remove(0); // Remove first element (like C++ mover.erase)
+                    mover.remove(0);
                 }
             }
 
@@ -119,7 +111,6 @@ impl<'a> Pacman<'a> {
         }
     }
 
-    // Check food collision and consumption (like C++ FoodCollision)
     pub fn food_collision(&self, actual_map: &mut [BlockType]) -> u8 {
         let cell_x = self.entity.get_x() as f32 / BLOCK_SIZE_24 as f32;
         let cell_y = self.entity.get_y() as f32 / BLOCK_SIZE_24 as f32;
@@ -136,11 +127,11 @@ impl<'a> Pacman<'a> {
                     match actual_map[index] {
                         BlockType::Pellet => {
                             actual_map[index] = BlockType::Nothing;
-                            return 0; // Pellet eaten
+                            return 0;
                         }
                         BlockType::Energizer => {
                             actual_map[index] = BlockType::Nothing;
-                            return 1; // Energizer eaten
+                            return 1;
                         }
                         _ => {}
                     }
@@ -159,7 +150,6 @@ impl<'a> Pacman<'a> {
         self.energy_status = new_energy_status;
     }
 
-    // Set facing direction based on movement (like C++ SetFacing)
     fn set_facing(&mut self, mover: Direction) {
         match mover {
             Direction::Right => self.entity.mod_facing(0),
@@ -170,7 +160,6 @@ impl<'a> Pacman<'a> {
         }
     }
 
-    // Animation methods (like C++ version)
     pub fn is_dead_animation_ended(&self) -> bool {
         self.dead_animation_statement
     }
@@ -194,7 +183,6 @@ impl<'a> Pacman<'a> {
         self.curr_living_pac_frame = 32;
     }
 
-    // Entity trait delegation
     pub fn is_alive(&self) -> bool {
         self.entity.is_alive()
     }
@@ -223,22 +211,19 @@ impl<'a> Pacman<'a> {
         self.entity.is_colliding(other)
     }
 
-    // Draw Pacman (like C++ Draw method)
     pub fn draw(&mut self, canvas: &mut WindowCanvas) -> Result<(), Box<dyn std::error::Error>> {
         if self.entity.is_alive() {
-            // Draw living Pacman with facing direction (like C++ version)
             let current_clip = &self.living_pac_sprite_clips
                 [(self.curr_living_pac_frame / ((LIVING_PAC_FRAMES * 4) as u8)) as usize];
 
             self.living_pac.render_with_facing(
                 canvas,
-                (self.entity.get_x() - 4) as i32, // Offset like C++ version
+                (self.entity.get_x() - 4) as i32,
                 (self.entity.get_y() - 4) as i32,
-                self.entity.get_facing(), // Use facing direction
+                self.entity.get_facing(),
                 Some(*current_clip),
             )?;
         } else {
-            // Draw death animation (facing doesn't matter for death animation)
             let current_clip = &self.death_pac_sprite_clips
                 [(self.curr_death_pac_frame / DEATH_PAC_FRAMES as u8) as usize];
 
@@ -251,7 +236,6 @@ impl<'a> Pacman<'a> {
             )?;
 
             self.curr_death_pac_frame += 1;
-            // Animation ends when we've shown all frames (curr_death_pac_frame reaches DEATH_PAC_FRAMES * DEATH_PAC_FRAMES)
             if self.curr_death_pac_frame >= (DEATH_PAC_FRAMES * DEATH_PAC_FRAMES) as u8 {
                 self.dead_animation_statement = true;
                 self.curr_death_pac_frame = 0;
