@@ -26,20 +26,13 @@ impl<'a> GameTexture<'a> {
         texture_creator: &'a TextureCreator<WindowContext>,
         path: &str,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        // Free existing texture
         self.free();
 
-        // Load image at specified path using SDL2_image
-        let mut surface: Surface = sdl2::image::LoadSurface::from_file(Path::new(path))
+        let surface: Surface = sdl2::image::LoadSurface::from_file(Path::new(path))
             .map_err(|e| format!("Unable to load image {}: {}", path, e))?;
 
-        // Set color key (cyan background becomes transparent)
-        surface.set_color_key(true, Color::RGB(0, 255, 255))?;
-
-        // Create texture from surface
         let texture = texture_creator.create_texture_from_surface(&surface)?;
 
-        // Get dimensions
         self.width = surface.width();
         self.height = surface.height();
         self.texture = Some(texture);
@@ -54,19 +47,15 @@ impl<'a> GameTexture<'a> {
         font: &Font,
         color: Color,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        // Free existing texture
         self.free();
 
-        // Render text surface
         let text_surface = font
             .render(text)
             .solid(color)
             .map_err(|e| format!("Unable to render text surface: {}", e))?;
 
-        // Create texture from surface
         let texture = texture_creator.create_texture_from_surface(&text_surface)?;
 
-        // Get dimensions
         self.width = text_surface.width();
         self.height = text_surface.height();
         self.texture = Some(texture);
@@ -126,22 +115,14 @@ impl<'a> GameTexture<'a> {
             }
 
             let angle = match facing {
-                0 => 0.0,   // Right
-                1 => 90.0,  // Down
-                2 => 180.0, // Left
-                3 => 270.0, // Up
+                0 => 0.0,
+                1 => 90.0,
+                2 => 180.0,
+                3 => 270.0,
                 _ => 0.0,
             };
 
-            canvas.copy_ex(
-                texture,
-                clip,
-                Some(render_quad),
-                angle,
-                None,  // Center point (use default center)
-                false, // No horizontal flip
-                false, // No vertical flip
-            )?;
+            canvas.copy_ex(texture, clip, Some(render_quad), angle, None, false, false)?;
         }
         Ok(())
     }

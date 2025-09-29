@@ -1,9 +1,7 @@
-use crate::board::{BlockType, Direction, EntityType};
-use crate::entity::{Entity, Ghost, GhostBehavior, GhostType};
-use crate::pacman::Pacman;
+use crate::board::{Direction, EntityType};
+use crate::entity::{Ghost, GhostBehavior, GhostType};
 use crate::position::Position;
-use crate::BLOCK_SIZE_24;
-use sdl2::pixels::Color;
+use crate::{BLOCK_SIZE_24, CYAN};
 
 pub struct Inky<'a> {
     ghost: Ghost<'a>,
@@ -21,7 +19,7 @@ impl<'a> Inky<'a> {
             (11 * BLOCK_SIZE_24 + BLOCK_SIZE_24 / 2) as i16,
             (17 * BLOCK_SIZE_24 + BLOCK_SIZE_24 / 2) as i16,
         );
-        let color = Color::RGB(0, 255, 255); // Cyan
+        let color = CYAN;
         let ghost = Ghost::new(
             color,
             EntityType::Inky,
@@ -54,17 +52,35 @@ impl<'a> GhostBehavior<'a> for Inky<'a> {
     fn calculate_target(
         &mut self,
         pacman_pos: Position,
-        _pacman_dir: Direction,
+        pacman_dir: Direction,
         blinky_pos: Option<Position>,
     ) {
-        // Inky: Complex AI using Blinky's position
         if let Some(blinky_position) = blinky_pos {
-            // Vector from Blinky to Pacman, doubled
-            let target_x = pacman_pos.get_x() + (pacman_pos.get_x() - blinky_position.get_x());
-            let target_y = pacman_pos.get_y() + (pacman_pos.get_y() - blinky_position.get_y());
+            let offset = BLOCK_SIZE_24 * 2;
+
+            let intermediate_pos = match pacman_dir {
+                Direction::Up => Position::new(
+                    pacman_pos.get_x() - offset as i16,
+                    pacman_pos.get_y() - offset as i16,
+                ),
+                Direction::Down => {
+                    Position::new(pacman_pos.get_x(), pacman_pos.get_y() + offset as i16)
+                }
+                Direction::Left => {
+                    Position::new(pacman_pos.get_x() - offset as i16, pacman_pos.get_y())
+                }
+                Direction::Right => {
+                    Position::new(pacman_pos.get_x() + offset as i16, pacman_pos.get_y())
+                }
+                Direction::Nowhere => pacman_pos,
+            };
+
+            let target_x =
+                intermediate_pos.get_x() + (intermediate_pos.get_x() - blinky_position.get_x());
+            let target_y =
+                intermediate_pos.get_y() + (intermediate_pos.get_y() - blinky_position.get_y());
             self.ghost.target = Position::new(target_x, target_y);
         } else {
-            // Fallback: direct chase if Blinky position not available
             self.ghost.target = pacman_pos;
         }
     }

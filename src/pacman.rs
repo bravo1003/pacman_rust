@@ -42,7 +42,6 @@ impl<'a> Pacman<'a> {
             dead_animation_statement: false,
         };
 
-        // Load textures (like C++ constructor)
         pacman
             .living_pac
             .load_from_file(texture_creator, "assets/PacMan32.png")?;
@@ -50,15 +49,12 @@ impl<'a> Pacman<'a> {
             .death_pac
             .load_from_file(texture_creator, "assets/GameOver32.png")?;
 
-        // Initialize sprite frames (like C++ InitFrames)
         pacman.init_frames();
 
         Ok(pacman)
     }
 
-    // Initialize sprite frames (matching C++ InitFrames function)
     fn init_frames(&mut self) {
-        // Living Pac frames
         let mut counter = 0;
         for i in 0..LIVING_PAC_FRAMES {
             self.living_pac_sprite_clips[i] = Rect::new(counter, 0, BLOCK_SIZE_32, BLOCK_SIZE_32);
@@ -138,10 +134,9 @@ impl<'a> Pacman<'a> {
                 }
             }
         }
-        2 // No food eaten
+        2
     }
 
-    // Energy status methods
     pub fn is_energized(&self) -> bool {
         self.energy_status
     }

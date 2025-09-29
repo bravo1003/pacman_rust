@@ -1,8 +1,7 @@
-use crate::board::{BlockType, Direction, EntityType};
-use crate::entity::{Entity, Ghost, GhostBehavior, GhostType};
+use crate::board::{Direction, EntityType};
+use crate::entity::{Ghost, GhostBehavior, GhostType};
 use crate::position::Position;
-use crate::BLOCK_SIZE_24;
-use sdl2::pixels::Color;
+use crate::{BLOCK_SIZE_24, RED};
 
 pub struct Blinky<'a> {
     ghost: Ghost<'a>,
@@ -20,7 +19,7 @@ impl<'a> Blinky<'a> {
             (13 * BLOCK_SIZE_24 + BLOCK_SIZE_24 / 2) as i16,
             (17 * BLOCK_SIZE_24 + BLOCK_SIZE_24 / 2) as i16,
         );
-        let color = Color::RGB(255, 0, 0); // Red
+        let color = RED;
         let ghost = Ghost::new(
             color,
             EntityType::Blinky,
@@ -50,8 +49,12 @@ impl<'a> GhostBehavior<'a> for Blinky<'a> {
         self.ghost.scatter_target
     }
 
-    fn calculate_target(&mut self, pacman_pos: Position, _pacman_dir: Direction, _blinky_pos: Option<Position>) {
-        // Blinky: Direct chase - always targets Pacman's exact position
+    fn calculate_target(
+        &mut self,
+        pacman_pos: Position,
+        _pacman_dir: Direction,
+        _blinky_pos: Option<Position>,
+    ) {
         self.ghost.target = pacman_pos;
     }
 

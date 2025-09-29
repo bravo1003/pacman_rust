@@ -3,12 +3,11 @@ use crate::entity::{BaseEntity, Entity};
 use crate::pacman::Pacman;
 use crate::position::Position;
 use crate::texture::GameTexture;
-use crate::{BLOCK_SIZE_24, BLOCK_SIZE_32, WINDOW_WIDTH};
+use crate::{BLOCK_SIZE_24, BLOCK_SIZE_32, BLUE, RED, WHITE, WINDOW_WIDTH};
 use sdl2::pixels::Color;
 use sdl2::rect::Rect;
 use sdl2::render::WindowCanvas;
 
-// Common ghost behavior trait
 pub trait GhostBehavior<'a> {
     fn get_ghost_type(&self) -> GhostType;
     fn get_scatter_target(&self) -> Position;
@@ -23,7 +22,6 @@ pub trait GhostBehavior<'a> {
     fn get_ghost_mut(&mut self) -> &mut Ghost<'a>;
     fn get_ghost(&self) -> &Ghost<'a>;
 
-    // NEW: Main update method like C++ UpdatePos()
     fn update_pos(
         &mut self,
         actual_map: &[BlockType],
@@ -34,7 +32,6 @@ pub trait GhostBehavior<'a> {
         let pacman_pos = pacman.get_position();
         let pacman_dir = pacman.get_direction();
 
-        // Get speed and other values before the loop
         let speed = {
             let ghost = self.get_ghost_mut();
             ghost.update_speed(pacman.is_energized());
@@ -42,26 +39,21 @@ pub trait GhostBehavior<'a> {
             ghost.entity.get_speed()
         };
 
-        // Main movement loop - each iteration is one step
         for _ in 0..speed {
-            // Check if we should calculate target for this step
             let should_calculate = {
                 let ghost = self.get_ghost_mut();
                 ghost.should_calculate_normal_target(pacman.is_energized())
             };
 
-            // Update facing direction
             {
                 let ghost = self.get_ghost_mut();
                 ghost.update_facing(pacman.is_energized());
             }
 
-            // Calculate target if needed (important: do this each step!)
             if should_calculate {
                 self.calculate_target(pacman_pos, pacman_dir, blinky_pos);
             }
 
-            // Calculate direction and move
             {
                 let ghost = self.get_ghost_mut();
                 ghost.calculate_direction(actual_map);
@@ -72,7 +64,6 @@ pub trait GhostBehavior<'a> {
     }
 }
 
-// Ghost types enum
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum GhostType {
     Blinky,
@@ -81,11 +72,9 @@ pub enum GhostType {
     Clyde,
 }
 
-// Common ghost constants
 pub const GHOST_BODY_FRAMES: usize = 2;
-pub const GHOST_EYE_FRAMES: usize = 5; // 4 directional + 1 frightened
+pub const GHOST_EYE_FRAMES: usize = 5;
 
-// Base Ghost struct that all ghosts will use
 pub struct Ghost<'a> {
     pub entity: BaseEntity,
     pub body: GameTexture<'a>,
@@ -95,7 +84,7 @@ pub struct Ghost<'a> {
     pub color: Color,
     pub current_body_frame: u8,
     pub can_use_door: bool,
-    pub status: bool, // false = chase, true = scatter
+    pub status: bool,
     pub target: Position,
     pub scatter_target: Position,
     pub door_target: Position,
@@ -113,17 +102,14 @@ impl<'a> Ghost<'a> {
         let mut body = GameTexture::new();
         let mut eyes = GameTexture::new();
 
-        // Load ghost textures
         body.load_from_file(texture_creator, "assets/GhostBody32.png")?;
         eyes.load_from_file(texture_creator, "assets/GhostEyes32.png")?;
 
-        // Initialize body sprite clips
         let ghost_body_sprite_clips = [
             Rect::new(0, 0, BLOCK_SIZE_32 as u32, BLOCK_SIZE_32 as u32),
             Rect::new(BLOCK_SIZE_32 as i32, 0, BLOCK_SIZE_32, BLOCK_SIZE_32),
         ];
 
-        // Initialize eye sprite clips (Right, Up, Left, Down, Frightened)
         let ghost_eye_sprite_clips = [
             Rect::new(0, 0, BLOCK_SIZE_32 as u32, BLOCK_SIZE_32 as u32),
             Rect::new(
@@ -152,7 +138,6 @@ impl<'a> Ghost<'a> {
             ),
         ];
 
-        // Create entity starting at home position
         let mut entity = BaseEntity::new(identity);
         entity.position = home_position;
 
@@ -176,21 +161,15 @@ impl<'a> Ghost<'a> {
         })
     }
 
-    // Common ghost methods
-
-    /// Check if ghost is in energized home containment (oscillating while energized)
     pub fn is_in_energized_home_containment(&self, pacman_energized: bool) -> bool {
         if !pacman_energized || !self.entity.is_alive() {
             return false;
         }
 
-        // Check if ghost is in the oscillation area (expanded home bounds)
         let x = self.entity.position.x;
         let y = self.entity.position.y;
 
-        // X must be in home X range
         if x > (11 * BLOCK_SIZE_24) as i16 && x < (17 * BLOCK_SIZE_24) as i16 {
-            // Y can be in extended range for oscillation (one block above normal home)
             if y > (14 * BLOCK_SIZE_24) as i16 && y < (18 * BLOCK_SIZE_24) as i16 {
                 return true;
             }
@@ -198,12 +177,10 @@ impl<'a> Ghost<'a> {
         false
     }
 
-    /// Check if ghost is in home area (like C++ IsHome())
     pub fn is_home(&self) -> bool {
         let x = self.entity.position.x;
         let y = self.entity.position.y;
 
-        // C++ logic: x > 11*BlockSize24 && x < 17*BlockSize24 && y > 15*BlockSize24 && y < 18*BlockSize24
         if x > (11 * BLOCK_SIZE_24) as i16 && x < (17 * BLOCK_SIZE_24) as i16 {
             if y > (15 * BLOCK_SIZE_24) as i16 && y < (18 * BLOCK_SIZE_24) as i16 {
                 return true;
@@ -212,9 +189,7 @@ impl<'a> Ghost<'a> {
         false
     }
 
-    /// Determines if normal AI target calculation should be used (like C++ IsTargetToCalculate())
     pub fn should_calculate_normal_target(&mut self, pacman_energized: bool) -> bool {
-        // C++ Logic: Dead ghosts always target home and resurrect immediately when reaching it
         if !self.entity.is_alive() {
             self.can_use_door = true;
             self.target = self.home;
@@ -232,9 +207,7 @@ impl<'a> Ghost<'a> {
             return false;
         }
 
-        // C++ Logic: If alive, in home, and pacman is energized - do oscillation and stay trapped!
         if self.is_home() && pacman_energized {
-            // Oscillate up and down within home (like C++ logic)
             if self.entity.position.x == self.home.x && self.entity.position.y == self.home.y {
                 self.target.y = self.home.y - BLOCK_SIZE_24 as i16;
             } else if self.entity.position.x == self.home.x
@@ -242,23 +215,21 @@ impl<'a> Ghost<'a> {
             {
                 self.target.y = self.home.y;
             }
-            return false; // IMPORTANT: Prevent exit while energized!
+            return false;
         }
 
-        // C++ Logic: If alive, in home, and NOT energized - allow exit via door
         if self.is_home() && self.entity.is_alive() {
             self.can_use_door = true;
             self.target = self.door_target;
-            return false; // Don't use normal AI targeting
+            return false;
         }
 
-        // Outside home - use normal AI (chase/scatter)
         self.can_use_door = false;
         match self.status {
-            false => true, // Chase mode - calculate target
+            false => true,
             true => {
                 self.target = self.scatter_target;
-                false // Scatter mode - use scatter target
+                false
             }
         }
     }
@@ -288,24 +259,22 @@ impl<'a> Ghost<'a> {
     }
 
     pub fn update_status(&mut self, pacman_is_energized: bool, timed_status: bool) {
-        // C++ UpdateStatus logic: if pacman is energized, force scatter mode (status = true)
         if pacman_is_energized {
             if !self.status {
-                self.status = true; // Force scatter mode when pacman is energized
+                self.status = true;
             }
             return;
         }
 
-        // When not energized, use normal timed status (chase/scatter cycle)
         match timed_status {
             false => {
                 if self.status {
-                    self.status = false; // Switch to chase mode
+                    self.status = false;
                 }
             }
             true => {
                 if !self.status {
-                    self.status = true; // Switch to scatter mode
+                    self.status = true;
                 }
             }
         }
@@ -331,7 +300,7 @@ impl<'a> Ghost<'a> {
                 };
                 self.entity.mod_facing(facing);
             } else {
-                self.entity.mod_facing(4); // C++ uses facing 4 for frightened ghosts
+                self.entity.mod_facing(4);
             }
             return;
         }
@@ -346,7 +315,6 @@ impl<'a> Ghost<'a> {
         self.entity.mod_facing(facing);
     }
 
-    // Direction calculation with bubble sort (common for all ghosts)
     pub fn calculate_direction(&mut self, actual_map: &[BlockType]) {
         let mut distances = Vec::new();
         let mut possible_directions = Vec::new();
@@ -388,7 +356,6 @@ impl<'a> Ghost<'a> {
             return;
         }
 
-        // Bubble sort
         for i in 0..distances.len() {
             for j in 0..distances.len() {
                 if distances[i] < distances[j] {
@@ -446,36 +413,30 @@ impl<'a> Ghost<'a> {
             && self.entity.is_alive()
             && !self.is_in_energized_home_containment(pacman_is_energized)
         {
-            // C++ Draw logic: Only blue if energized AND alive AND not in home/containment area
-            self.body.set_color(0, 0, 255)?;
+            self.body.set_color(BLUE.r, BLUE.g, BLUE.b)?;
 
-            // Blinking effect in last 2 seconds (like C++ mGhostTimer.GetTicks() > mTimerTarget - 2000)
             if ghost_timer_ticks > (ghost_timer_target as u128 - 2000) {
-                // Blink every 250ms (like C++ (mGhostTimer.GetTicks() / 250) % 2 == 1)
                 if (ghost_timer_ticks / 250) % 2 == 1 {
-                    self.body.set_color(255, 255, 255)?; // White body
-                    self.eyes.set_color(255, 0, 0)?; // Red eyes
+                    self.body.set_color(WHITE.r, WHITE.g, WHITE.b)?;
+                    self.eyes.set_color(RED.r, RED.g, RED.b)?;
                 } else {
-                    self.eyes.set_color(255, 255, 255)?; // White eyes (body stays blue)
+                    self.eyes.set_color(WHITE.r, WHITE.g, WHITE.b)?;
                 }
             } else {
-                self.eyes.set_color(255, 255, 255)?; // White eyes
+                self.eyes.set_color(WHITE.r, WHITE.g, WHITE.b)?;
             }
         } else {
-            // Normal coloring: original ghost color, white eyes
             self.body
                 .set_color(self.color.r, self.color.g, self.color.b)?;
-            self.eyes.set_color(255, 255, 255)?;
+            self.eyes.set_color(WHITE.r, WHITE.g, WHITE.b)?;
         }
 
-        // Render body only if alive (like C++ version)
         if self.entity.is_alive() {
             let body_clip = &self.ghost_body_sprite_clips
                 [(self.current_body_frame / 8) as usize % GHOST_BODY_FRAMES];
             self.body.render(canvas, x, y, Some(*body_clip))?;
         }
 
-        // Always render eyes (like C++ version)
         let eye_frame = self.entity.get_facing() as usize;
         let eye_frame = if eye_frame >= GHOST_EYE_FRAMES {
             0
@@ -485,7 +446,6 @@ impl<'a> Ghost<'a> {
         let eye_clip = &self.ghost_eye_sprite_clips[eye_frame];
         self.eyes.render(canvas, x, y, Some(*eye_clip))?;
 
-        // Update animation frame
         self.current_body_frame = (self.current_body_frame + 1) % (GHOST_BODY_FRAMES as u8 * 8);
         Ok(())
     }

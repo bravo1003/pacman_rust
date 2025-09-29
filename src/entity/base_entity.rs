@@ -29,7 +29,6 @@ pub trait Entity {
     fn check_wrap(&mut self);
     fn is_colliding(&self, other: Position) -> bool;
 
-    // NEW: Set facing by Direction instead of u8
     fn set_facing(&mut self, direction: Direction);
 }
 
@@ -203,7 +202,7 @@ impl Entity for BaseEntity {
             Direction::Up => 1,
             Direction::Left => 2,
             Direction::Down => 3,
-            Direction::Nowhere => self.facing, // Keep current facing
+            Direction::Nowhere => self.facing,
         };
     }
 }

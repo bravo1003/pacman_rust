@@ -1,8 +1,7 @@
-use crate::board::{BlockType, Direction, EntityType};
+use crate::board::{Direction, EntityType};
 use crate::entity::{Entity, Ghost, GhostBehavior, GhostType};
 use crate::position::Position;
-use crate::{BLOCK_SIZE_24, WINDOW_WIDTH};
-use sdl2::pixels::Color;
+use crate::{BLOCK_SIZE_24, ORANGE, WINDOW_WIDTH};
 
 pub struct Clyde<'a> {
     ghost: Ghost<'a>,
@@ -20,7 +19,7 @@ impl<'a> Clyde<'a> {
             (15 * BLOCK_SIZE_24 + BLOCK_SIZE_24 / 2) as i16,
             (17 * BLOCK_SIZE_24 + BLOCK_SIZE_24 / 2) as i16,
         );
-        let color = Color::RGB(255, 165, 0); // Orange
+        let color = ORANGE;
         let ghost = Ghost::new(
             color,
             EntityType::Clyde,
@@ -50,8 +49,12 @@ impl<'a> GhostBehavior<'a> for Clyde<'a> {
         self.ghost.scatter_target
     }
 
-    fn calculate_target(&mut self, pacman_pos: Position, _pacman_dir: Direction, _blinky_pos: Option<Position>) {
-        // Clyde: Shy - chase when far, scatter when close
+    fn calculate_target(
+        &mut self,
+        pacman_pos: Position,
+        _pacman_dir: Direction,
+        _blinky_pos: Option<Position>,
+    ) {
         let mut dist_x = (self.ghost.entity.get_x() - pacman_pos.get_x()).abs();
         if dist_x > (WINDOW_WIDTH / 2) as i16 {
             dist_x = WINDOW_WIDTH as i16 - dist_x;
@@ -61,10 +64,8 @@ impl<'a> GhostBehavior<'a> for Clyde<'a> {
         .sqrt();
 
         if dist > (8 * BLOCK_SIZE_24) as f32 {
-            // Far away: chase Pacman
             self.ghost.target = pacman_pos;
         } else {
-            // Close: scatter to corner
             self.ghost.target = self.ghost.scatter_target;
         }
     }

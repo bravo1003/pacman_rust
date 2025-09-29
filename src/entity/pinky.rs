@@ -1,8 +1,7 @@
-use crate::board::{BlockType, Direction, EntityType};
-use crate::entity::{Entity, Ghost, GhostBehavior, GhostType};
+use crate::board::{Direction, EntityType};
+use crate::entity::{Ghost, GhostBehavior, GhostType};
 use crate::position::Position;
-use crate::BLOCK_SIZE_24;
-use sdl2::pixels::Color;
+use crate::{BLOCK_SIZE_24, PINK};
 
 pub struct Pinky<'a> {
     ghost: Ghost<'a>,
@@ -20,7 +19,7 @@ impl<'a> Pinky<'a> {
             (13 * BLOCK_SIZE_24 + BLOCK_SIZE_24 / 2) as i16,
             (17 * BLOCK_SIZE_24 + BLOCK_SIZE_24 / 2) as i16,
         );
-        let color = Color::RGB(255, 192, 203); // Pink
+        let color = PINK;
         let ghost = Ghost::new(
             color,
             EntityType::Pinky,
@@ -56,8 +55,7 @@ impl<'a> GhostBehavior<'a> for Pinky<'a> {
         pacman_dir: Direction,
         _blinky_pos: Option<Position>,
     ) {
-        // Pinky: Ambush - target 4 tiles ahead of Pacman's direction
-        let offset = BLOCK_SIZE_24 * 4; // 4 tiles ahead
+        let offset = BLOCK_SIZE_24 * 4;
 
         let target_pos = match pacman_dir {
             Direction::Up => Position::new(pacman_pos.get_x(), pacman_pos.get_y() - offset as i16),
@@ -70,7 +68,7 @@ impl<'a> GhostBehavior<'a> for Pinky<'a> {
             Direction::Right => {
                 Position::new(pacman_pos.get_x() + offset as i16, pacman_pos.get_y())
             }
-            Direction::Nowhere => pacman_pos, // Fallback to Pacman's position if not moving
+            Direction::Nowhere => pacman_pos,
         };
 
         self.ghost.target = target_pos;

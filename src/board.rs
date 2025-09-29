@@ -1,6 +1,7 @@
 use crate::texture::GameTexture;
 use crate::{
-    BLOCK_SIZE_24, BLOCK_SIZE_32, BOARD_HEIGHT, BOARD_WIDTH, WHITE, WINDOW_HEIGHT, WINDOW_WIDTH,
+    BLOCK_SIZE_24, BLOCK_SIZE_32, BLUE, BOARD_HEIGHT, BOARD_WIDTH, WHITE, WINDOW_HEIGHT,
+    WINDOW_WIDTH,
 };
 use sdl2::render::{TextureCreator, WindowCanvas};
 use sdl2::ttf::{Font, Sdl2TtfContext};
@@ -46,7 +47,6 @@ pub struct Board<'a> {
     door_texture: GameTexture<'a>,
     lives_texture: GameTexture<'a>,
 
-    // Score textures (like C++ version)
     score_word_texture: GameTexture<'a>,
     score_texture: GameTexture<'a>,
     high_score_word_texture: GameTexture<'a>,
@@ -54,7 +54,6 @@ pub struct Board<'a> {
 }
 
 impl<'a> Board<'a> {
-    // The exact same board layout as C++ version (no newlines, one continuous string)
     pub const CHAR_BOARD: &'static str = concat!(
         "                            ",
         "                            ",
@@ -97,7 +96,6 @@ impl<'a> Board<'a> {
         texture_creator: &'a TextureCreator<WindowContext>,
         ttf_context: &'a Sdl2TtfContext,
     ) -> Result<Self, Box<dyn std::error::Error>> {
-        // Load font (like C++ version)
         let font = ttf_context.load_font("assets/emulogic.ttf", 24)?;
 
         let mut board = Board {
@@ -116,7 +114,6 @@ impl<'a> Board<'a> {
             high_score_texture: GameTexture::new(),
         };
 
-        // Load textures (like C++ version)
         board
             .map_texture
             .load_from_file(texture_creator, "assets/Map24.png")?;
@@ -133,7 +130,6 @@ impl<'a> Board<'a> {
             .lives_texture
             .load_from_file(texture_creator, "assets/Lives32.png")?;
 
-        // Load score text textures (like C++ version)
         board
             .score_word_texture
             .load_from_rendered_text(texture_creator, "Score", &font, WHITE)?;
@@ -144,7 +140,7 @@ impl<'a> Board<'a> {
             WHITE,
         )?;
 
-        board.map_texture.set_color(0x00, 0x00, 0xff)?;
+        board.map_texture.set_color(BLUE.r, BLUE.g, BLUE.b)?;
 
         board.convert_sketch();
         board.set_score(texture_creator, &font)?;
@@ -199,7 +195,7 @@ impl<'a> Board<'a> {
             }
         }
 
-        crate::position::Position::new(0, 0) // Default position if not found
+        crate::position::Position::new(0, 0)
     }
 
     pub fn draw(
@@ -207,23 +203,19 @@ impl<'a> Board<'a> {
         canvas: &mut WindowCanvas,
         actual_map: &[BlockType],
     ) -> Result<(), Box<dyn std::error::Error>> {
-        // Render score texts first (like C++ version)
-        self.score_word_texture.render(canvas, 0, 0, None)?; // "Score" at (0, 0)
+        self.score_word_texture.render(canvas, 0, 0, None)?;
         self.score_texture
-            .render(canvas, 0, BLOCK_SIZE_32 as i32, None)?; // Score value at (0, 32)
-        self.high_score_word_texture.render(canvas, 336, 0, None)?; // "High Score" at (336, 0)
+            .render(canvas, 0, BLOCK_SIZE_32 as i32, None)?;
+        self.high_score_word_texture.render(canvas, 336, 0, None)?;
         self.high_score_texture
-            .render(canvas, 336, BLOCK_SIZE_32 as i32, None)?; // High score value at (336, 32)
+            .render(canvas, 336, BLOCK_SIZE_32 as i32, None)?;
 
-        // Render map (the walls are pre-rendered in Map24.png)
         self.map_texture.render(canvas, 0, 0, None)?;
 
-        // Render door at center position (like C++ version)
         let door_x = (WINDOW_WIDTH / 2) as i32 - 23;
         let door_y = (WINDOW_HEIGHT / 2) as i32 - 57;
         self.door_texture.render(canvas, door_x, door_y, None)?;
 
-        // Render pellets and energizers based on actual map state
         for y in 0..BOARD_HEIGHT {
             for x in 0..BOARD_WIDTH {
                 let index = y * BOARD_WIDTH + x;
@@ -289,8 +281,7 @@ impl<'a> Board<'a> {
         texture_creator: &'a TextureCreator<WindowContext>,
         font: &Font,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        // For now, just use current score as high score (like C++ version reads from file)
-        let high_score = self.score.max(0); // You could read from file here
+        let high_score = self.score.max(0);
         let high_score_text = format!("{}", high_score);
         self.high_score_texture.load_from_rendered_text(
             texture_creator,
@@ -301,14 +292,12 @@ impl<'a> Board<'a> {
         Ok(())
     }
 
-    // NEW: Decrease lives method (like C++ version)
     pub fn decrease_lives(&mut self) {
         if self.lives > 0 {
             self.lives -= 1;
         }
     }
 
-    // NEW: Score increase by specific value (for ghost scores)
     pub fn score_increase_by_value(&mut self, value: u16) {
         self.score += value as u32;
     }
