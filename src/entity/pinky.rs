@@ -1,4 +1,4 @@
-use crate::board::EntityType;
+use crate::board::{BlockType, Direction, EntityType};
 use crate::entity::{Entity, Ghost, GhostBehavior, GhostType};
 use crate::position::Position;
 use crate::BLOCK_SIZE_24;
@@ -50,10 +50,30 @@ impl<'a> GhostBehavior<'a> for Pinky<'a> {
         self.ghost.scatter_target
     }
 
-    fn calculate_target(&mut self, pacman_pos: Position, _blinky_pos: Option<Position>) {
+    fn calculate_target(
+        &mut self,
+        pacman_pos: Position,
+        pacman_dir: Direction,
+        _blinky_pos: Option<Position>,
+    ) {
         // Pinky: Ambush - target 4 tiles ahead of Pacman's direction
-        // For now, just target Pacman directly (we can improve this later with direction info)
-        self.ghost.target = pacman_pos;
+        let offset = BLOCK_SIZE_24 * 4; // 4 tiles ahead
+
+        let target_pos = match pacman_dir {
+            Direction::Up => Position::new(pacman_pos.get_x(), pacman_pos.get_y() - offset as i16),
+            Direction::Down => {
+                Position::new(pacman_pos.get_x(), pacman_pos.get_y() + offset as i16)
+            }
+            Direction::Left => {
+                Position::new(pacman_pos.get_x() - offset as i16, pacman_pos.get_y())
+            }
+            Direction::Right => {
+                Position::new(pacman_pos.get_x() + offset as i16, pacman_pos.get_y())
+            }
+            Direction::Nowhere => pacman_pos, // Fallback to Pacman's position if not moving
+        };
+
+        self.ghost.target = target_pos;
     }
 
     fn get_can_use_door(&self) -> bool {

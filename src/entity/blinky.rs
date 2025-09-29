@@ -1,4 +1,4 @@
-use crate::board::EntityType;
+use crate::board::{BlockType, Direction, EntityType};
 use crate::entity::{Entity, Ghost, GhostBehavior, GhostType};
 use crate::position::Position;
 use crate::BLOCK_SIZE_24;
@@ -50,7 +50,7 @@ impl<'a> GhostBehavior<'a> for Blinky<'a> {
         self.ghost.scatter_target
     }
 
-    fn calculate_target(&mut self, pacman_pos: Position, _blinky_pos: Option<Position>) {
+    fn calculate_target(&mut self, pacman_pos: Position, _pacman_dir: Direction, _blinky_pos: Option<Position>) {
         // Blinky: Direct chase - always targets Pacman's exact position
         self.ghost.target = pacman_pos;
     }

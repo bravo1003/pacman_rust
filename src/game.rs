@@ -207,171 +207,71 @@ impl<'a> Game<'a> {
     }
 
     // Individual ghost update methods to avoid borrowing issues
-    fn update_blinky(&mut self) {
-        let pacman_pos = self.pacman.get_position();
 
-        // First check if we should calculate target and do it if needed
-        let should_calculate = {
-            let ghost = self.blinky.get_ghost_mut();
-            ghost.should_calculate_normal_target(self.pacman.is_energized())
-        };
-
-        if should_calculate {
-            self.blinky.calculate_target(pacman_pos, None);
-        }
-
-        let ghost = self.blinky.get_ghost_mut();
-        ghost.update_speed(self.pacman.is_energized());
-        ghost.update_status(self.pacman.is_energized(), self.timed_status);
-
-        for _ in 0..ghost.entity.get_speed() {
-            ghost.update_facing(self.pacman.is_energized());
-            ghost.calculate_direction(&self.actual_map);
-            ghost.entity.move_entity(ghost.entity.get_direction());
-            ghost.entity.check_wrap();
-        }
-    }
-
-    fn update_inky(&mut self) {
-        let pacman_pos = self.pacman.get_position();
-        let blinky_pos = self.blinky.get_ghost().entity.get_position();
-
-        // First check if we should calculate target and do it if needed
-        let should_calculate = {
-            let ghost = self.inky.get_ghost_mut();
-            ghost.should_calculate_normal_target(self.pacman.is_energized())
-        };
-
-        if should_calculate {
-            self.inky.calculate_target(pacman_pos, Some(blinky_pos));
-        }
-
-        let ghost = self.inky.get_ghost_mut();
-        ghost.update_speed(self.pacman.is_energized());
-        ghost.update_status(self.pacman.is_energized(), self.timed_status);
-
-        for _ in 0..ghost.entity.get_speed() {
-            ghost.update_facing(self.pacman.is_energized());
-            ghost.calculate_direction(&self.actual_map);
-            ghost.entity.move_entity(ghost.entity.get_direction());
-            ghost.entity.check_wrap();
-        }
-    }
-
-    fn update_pinky(&mut self) {
-        let pacman_pos = self.pacman.get_position();
-
-        // First check if we should calculate target and do it if needed
-        let should_calculate = {
-            let ghost = self.pinky.get_ghost_mut();
-            ghost.should_calculate_normal_target(self.pacman.is_energized())
-        };
-
-        if should_calculate {
-            self.pinky.calculate_target(pacman_pos, None);
-        }
-
-        let ghost = self.pinky.get_ghost_mut();
-        ghost.update_speed(self.pacman.is_energized());
-        ghost.update_status(self.pacman.is_energized(), self.timed_status);
-
-        for _ in 0..ghost.entity.get_speed() {
-            ghost.update_facing(self.pacman.is_energized());
-            ghost.calculate_direction(&self.actual_map);
-            ghost.entity.move_entity(ghost.entity.get_direction());
-            ghost.entity.check_wrap();
-        }
-    }
-
-    fn update_clyde(&mut self) {
-        let pacman_pos = self.pacman.get_position();
-
-        // First check if we should calculate target and do it if needed
-        let should_calculate = {
-            let ghost = self.clyde.get_ghost_mut();
-            ghost.should_calculate_normal_target(self.pacman.is_energized())
-        };
-
-        if should_calculate {
-            self.clyde.calculate_target(pacman_pos, None);
-        }
-
-        let ghost = self.clyde.get_ghost_mut();
-        ghost.update_speed(self.pacman.is_energized());
-        ghost.update_status(self.pacman.is_energized(), self.timed_status);
-
-        for _ in 0..ghost.entity.get_speed() {
-            ghost.update_facing(self.pacman.is_energized());
-            ghost.calculate_direction(&self.actual_map);
-            ghost.entity.move_entity(ghost.entity.get_direction());
-            ghost.entity.check_wrap();
-        }
-    }
-
-    // Check ghost-Pacman collisions (like C++ version)
-    fn check_ghost_collisions(&mut self) {
-        if !self.pacman.is_energized() {
-            // Normal mode - ghosts can kill Pacman
-            if (self
-                .pacman
-                .is_colliding(self.blinky.get_ghost().entity.get_position())
-                && self.blinky.get_ghost().entity.is_alive())
-                || (self
-                    .pacman
-                    .is_colliding(self.inky.get_ghost().entity.get_position())
-                    && self.inky.get_ghost().entity.is_alive())
-                || (self
-                    .pacman
-                    .is_colliding(self.pinky.get_ghost().entity.get_position())
-                    && self.pinky.get_ghost().entity.is_alive())
-                || (self
-                    .pacman
-                    .is_colliding(self.clyde.get_ghost().entity.get_position())
-                    && self.clyde.get_ghost().entity.is_alive())
-            {
-                self.pacman.mod_life_statement(false);
-                println!("Pacman caught by ghost!");
-            }
-        } else {
-            // Energized mode - Pacman can eat ghosts
-            if self
-                .pacman
-                .is_colliding(self.blinky.get_ghost().entity.get_position())
-                && self.blinky.get_ghost().entity.is_alive()
-            {
-                self.blinky.get_ghost_mut().entity.mod_life_statement(false);
-                self.board.score_increase(2); // Ghost points
-                println!("Blinky eaten! Score: {}", self.board.get_score());
-            }
-            if self
-                .pacman
-                .is_colliding(self.inky.get_ghost().entity.get_position())
-                && self.inky.get_ghost().entity.is_alive()
-            {
-                self.inky.get_ghost_mut().entity.mod_life_statement(false);
-                self.board.score_increase(2); // Ghost points
-                println!("Inky eaten! Score: {}", self.board.get_score());
-            }
-            if self
-                .pacman
-                .is_colliding(self.pinky.get_ghost().entity.get_position())
-                && self.pinky.get_ghost().entity.is_alive()
-            {
-                self.pinky.get_ghost_mut().entity.mod_life_statement(false);
-                self.board.score_increase(2); // Ghost points
-                println!("Pinky eaten! Score: {}", self.board.get_score());
-            }
-            if self
-                .pacman
-                .is_colliding(self.clyde.get_ghost().entity.get_position())
-                && self.clyde.get_ghost().entity.is_alive()
-            {
-                self.clyde.get_ghost_mut().entity.mod_life_statement(false);
-                self.board.score_increase(2); // Ghost points
-                println!("Clyde eaten! Score: {}", self.board.get_score());
-            }
-        }
-    }
+    // // Check ghost-Pacman collisions (like C++ version)
+    // fn check_ghost_collisions(&mut self) {
+    //     if !self.pacman.is_energized() {
+    //         // Normal mode - ghosts can kill Pacman
+    //         if (self
+    //             .pacman
+    //             .is_colliding(self.blinky.get_ghost().entity.get_position())
+    //             && self.blinky.get_ghost().entity.is_alive())
+    //             || (self
+    //                 .pacman
+    //                 .is_colliding(self.inky.get_ghost().entity.get_position())
+    //                 && self.inky.get_ghost().entity.is_alive())
+    //             || (self
+    //                 .pacman
+    //                 .is_colliding(self.pinky.get_ghost().entity.get_position())
+    //                 && self.pinky.get_ghost().entity.is_alive())
+    //             || (self
+    //                 .pacman
+    //                 .is_colliding(self.clyde.get_ghost().entity.get_position())
+    //                 && self.clyde.get_ghost().entity.is_alive())
+    //         {
+    //             self.pacman.mod_life_statement(false);
+    //             println!("Pacman caught by ghost!");
+    //         }
+    //     } else {
+    //         // Energized mode - Pacman can eat ghosts
+    //         if self
+    //             .pacman
+    //             .is_colliding(self.blinky.get_ghost().entity.get_position())
+    //             && self.blinky.get_ghost().entity.is_alive()
+    //         {
+    //             self.blinky.get_ghost_mut().entity.mod_life_statement(false);
+    //             self.board.score_increase(2); // Ghost points
+    //             println!("Blinky eaten! Score: {}", self.board.get_score());
+    //         }
+    //         if self
+    //             .pacman
+    //             .is_colliding(self.inky.get_ghost().entity.get_position())
+    //             && self.inky.get_ghost().entity.is_alive()
+    //         {
+    //             self.inky.get_ghost_mut().entity.mod_life_statement(false);
+    //             self.board.score_increase(2); // Ghost points
+    //             println!("Inky eaten! Score: {}", self.board.get_score());
+    //         }
+    //         if self
+    //             .pacman
+    //             .is_colliding(self.pinky.get_ghost().entity.get_position())
+    //             && self.pinky.get_ghost().entity.is_alive()
+    //         {
+    //             self.pinky.get_ghost_mut().entity.mod_life_statement(false);
+    //             self.board.score_increase(2); // Ghost points
+    //             println!("Pinky eaten! Score: {}", self.board.get_score());
+    //         }
+    //         if self
+    //             .pacman
+    //             .is_colliding(self.clyde.get_ghost().entity.get_position())
+    //             && self.clyde.get_ghost().entity.is_alive()
+    //         {
+    //             self.clyde.get_ghost_mut().entity.mod_life_statement(false);
+    //             self.board.score_increase(2); // Ghost points
+    //             println!("Clyde eaten! Score: {}", self.board.get_score());
+    //         }
+    //     }
+    // }
 
     pub fn update(&mut self) {
         self.process();
@@ -606,15 +506,26 @@ impl<'a> Game<'a> {
         }
     }
 
-    /// Update all entity positions (like C++ Game::UpdatePositions())
+    /// Main update method for positions (like C++ UpdatePositions)
     fn update_positions(&mut self) {
-        // Update ghosts
-        self.update_blinky();
-        self.update_inky();
-        self.update_pinky();
-        self.update_clyde();
+        // Pass blinky's position to inky for its complex AI behavior
+        let blinky_pos = self.blinky.get_ghost().entity.get_position();
 
-        // Update Pacman
+        // Update each ghost with their specific requirements
+        self.blinky
+            .update_pos(&self.actual_map, &self.pacman, None, self.timed_status);
+        self.inky.update_pos(
+            &self.actual_map,
+            &self.pacman,
+            Some(blinky_pos),
+            self.timed_status,
+        );
+        self.pinky
+            .update_pos(&self.actual_map, &self.pacman, None, self.timed_status);
+        self.clyde
+            .update_pos(&self.actual_map, &self.pacman, None, self.timed_status);
+
+        // Update Pacman (like C++ mPac.UpdatePos(mover, ActualMap))
         self.pacman.update_pos(&mut self.mover, &self.actual_map);
     }
 

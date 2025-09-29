@@ -1,4 +1,4 @@
-use crate::board::EntityType;
+use crate::board::{BlockType, Direction, EntityType};
 use crate::entity::{Entity, Ghost, GhostBehavior, GhostType};
 use crate::position::Position;
 use crate::{BLOCK_SIZE_24, WINDOW_WIDTH};
@@ -50,7 +50,7 @@ impl<'a> GhostBehavior<'a> for Clyde<'a> {
         self.ghost.scatter_target
     }
 
-    fn calculate_target(&mut self, pacman_pos: Position, _blinky_pos: Option<Position>) {
+    fn calculate_target(&mut self, pacman_pos: Position, _pacman_dir: Direction, _blinky_pos: Option<Position>) {
         // Clyde: Shy - chase when far, scatter when close
         let mut dist_x = (self.ghost.entity.get_x() - pacman_pos.get_x()).abs();
         if dist_x > (WINDOW_WIDTH / 2) as i16 {

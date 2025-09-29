@@ -195,6 +195,10 @@ impl<'a> Pacman<'a> {
         self.entity.get_position()
     }
 
+    pub fn get_direction(&self) -> Direction {
+        self.entity.get_direction()
+    }
+
     pub fn set_position(&mut self, position: Position) {
         self.entity.set_position(position);
     }

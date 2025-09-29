@@ -1,5 +1,6 @@
-use crate::board::EntityType;
+use crate::board::{BlockType, Direction, EntityType};
 use crate::entity::{Entity, Ghost, GhostBehavior, GhostType};
+use crate::pacman::Pacman;
 use crate::position::Position;
 use crate::BLOCK_SIZE_24;
 use sdl2::pixels::Color;
@@ -50,7 +51,12 @@ impl<'a> GhostBehavior<'a> for Inky<'a> {
         self.ghost.scatter_target
     }
 
-    fn calculate_target(&mut self, pacman_pos: Position, blinky_pos: Option<Position>) {
+    fn calculate_target(
+        &mut self,
+        pacman_pos: Position,
+        _pacman_dir: Direction,
+        blinky_pos: Option<Position>,
+    ) {
         // Inky: Complex AI using Blinky's position
         if let Some(blinky_position) = blinky_pos {
             // Vector from Blinky to Pacman, doubled

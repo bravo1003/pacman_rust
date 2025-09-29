@@ -1,5 +1,6 @@
 use crate::board::{BlockType, Direction, EntityType};
 use crate::entity::{BaseEntity, Entity};
+use crate::pacman::Pacman;
 use crate::position::Position;
 use crate::texture::GameTexture;
 use crate::{BLOCK_SIZE_24, BLOCK_SIZE_32, WINDOW_WIDTH};
@@ -11,11 +12,64 @@ use sdl2::render::WindowCanvas;
 pub trait GhostBehavior<'a> {
     fn get_ghost_type(&self) -> GhostType;
     fn get_scatter_target(&self) -> Position;
-    fn calculate_target(&mut self, pacman_pos: Position, blinky_pos: Option<Position>);
+    fn calculate_target(
+        &mut self,
+        pacman_pos: Position,
+        pacman_dir: Direction,
+        blinky_pos: Option<Position>,
+    );
     fn get_can_use_door(&self) -> bool;
     fn set_can_use_door(&mut self, can_use_door: bool);
     fn get_ghost_mut(&mut self) -> &mut Ghost<'a>;
     fn get_ghost(&self) -> &Ghost<'a>;
+
+    // NEW: Main update method like C++ UpdatePos()
+    fn update_pos(
+        &mut self,
+        actual_map: &[BlockType],
+        pacman: &Pacman,
+        blinky_pos: Option<Position>,
+        timed_status: bool,
+    ) {
+        let pacman_pos = pacman.get_position();
+        let pacman_dir = pacman.get_direction();
+
+        // Get speed and other values before the loop
+        let speed = {
+            let ghost = self.get_ghost_mut();
+            ghost.update_speed(pacman.is_energized());
+            ghost.update_status(pacman.is_energized(), timed_status);
+            ghost.entity.get_speed()
+        };
+
+        // Main movement loop - each iteration is one step
+        for _ in 0..speed {
+            // Check if we should calculate target for this step
+            let should_calculate = {
+                let ghost = self.get_ghost_mut();
+                ghost.should_calculate_normal_target(pacman.is_energized())
+            };
+
+            // Update facing direction
+            {
+                let ghost = self.get_ghost_mut();
+                ghost.update_facing(pacman.is_energized());
+            }
+
+            // Calculate target if needed (important: do this each step!)
+            if should_calculate {
+                self.calculate_target(pacman_pos, pacman_dir, blinky_pos);
+            }
+
+            // Calculate direction and move
+            {
+                let ghost = self.get_ghost_mut();
+                ghost.calculate_direction(actual_map);
+                ghost.entity.move_entity(ghost.entity.get_direction());
+                ghost.entity.check_wrap();
+            }
+        }
+    }
 }
 
 // Ghost types enum
@@ -205,21 +259,6 @@ impl<'a> Ghost<'a> {
             true => {
                 self.target = self.scatter_target;
                 false // Scatter mode - use scatter target
-            }
-        }
-    }
-
-    pub fn is_target_to_calculate(&self, pacman_is_energized: bool) -> bool {
-        if !self.entity.is_alive() {
-            false
-        } else if pacman_is_energized {
-            self.entity.get_x() % BLOCK_SIZE_24 as i16 == 0
-                && self.entity.get_y() % BLOCK_SIZE_24 as i16 == 0
-        } else {
-            match self.entity.get_x() % BLOCK_SIZE_24 as i16 {
-                0 => self.entity.get_y() % BLOCK_SIZE_24 as i16 == 0,
-                12 => self.entity.get_y() % BLOCK_SIZE_24 as i16 == 0,
-                _ => false,
             }
         }
     }
