@@ -208,12 +208,12 @@ impl Entity for BaseEntity {
 
     fn is_colliding(&self, other: Position) -> bool {
         let block_size = BLOCK_SIZE_24 as i16;
-        if other.get_x() > self.get_x() - block_size && other.get_x() < self.get_x() + block_size {
-            if other.get_y() > self.get_y() - block_size
-                && other.get_y() < self.get_y() + block_size
-            {
-                return true;
-            }
+        if other.get_x() > self.get_x() - block_size
+            && other.get_x() < self.get_x() + block_size
+            && other.get_y() > self.get_y() - block_size
+            && other.get_y() < self.get_y() + block_size
+        {
+            return true;
         }
         false
     }

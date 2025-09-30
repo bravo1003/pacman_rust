@@ -1,8 +1,9 @@
+use super::collision::{CollisionEvent, CollisionSystem, GhostType};
+use super::scoring::ScoringSystem;
+use super::state::{GameState, GameTimer};
 use crate::board::{BlockType, Board, Direction};
-use crate::entity::{Blinky, Clyde, Entity, GhostBehavior, Inky, Pinky};
-use crate::game_state::{GameState, GameTimer};
 use crate::entity::pacman::Pacman;
-use crate::position::Position;
+use crate::entity::{Blinky, Clyde, Entity, GhostBehavior, Inky, Pinky};
 use crate::texture::GameTexture;
 use crate::{BOARD_HEIGHT, BOARD_WIDTH, RED, YELLOW};
 use sdl2::keyboard::Keycode;
@@ -33,16 +34,16 @@ pub struct Game<'a> {
     ghost_timer_target: u32,
     timed_status: bool,
 
-    ghost_score_multiplier: u16,
-    dead_ghosts_counter: u8,
+    // Track if ghosts have been reversed for current energizer
+    ghosts_reversed_for_energizer: bool,
+
+    // Game systems
+    collision_system: CollisionSystem,
+    scoring_system: ScoringSystem,
 
     ready_texture: GameTexture<'a>,
     game_over_texture: GameTexture<'a>,
     paused_texture: GameTexture<'a>,
-    little_score_timers: Vec<GameTimer>,
-    little_score_positions: Vec<Position>,
-    little_score_values: Vec<u16>,
-    little_timer_target: u32,
 
     level: u16,
 
@@ -83,31 +84,15 @@ impl<'a> Game<'a> {
         let clyde_start = board.reset_position(crate::board::EntityType::Clyde);
         clyde.get_ghost_mut().entity.set_position(clyde_start);
 
-
         let font = ttf_context.load_font("assets/emulogic.ttf", 24)?;
         let mut ready_texture = GameTexture::new();
-        ready_texture.load_from_rendered_text(
-            texture_creator,
-            "READY!",
-            &font,
-            YELLOW,
-        )?;
+        ready_texture.load_from_rendered_text(texture_creator, "READY!", &font, YELLOW)?;
 
         let mut game_over_texture = GameTexture::new();
-        game_over_texture.load_from_rendered_text(
-            texture_creator,
-            "GAME  OVER",
-            &font,
-            RED,
-        )?;
+        game_over_texture.load_from_rendered_text(texture_creator, "GAME  OVER", &font, RED)?;
 
         let mut paused_texture = GameTexture::new();
-        paused_texture.load_from_rendered_text(
-            texture_creator,
-            "PAUSED",
-            &font,
-            RED,
-        )?;
+        paused_texture.load_from_rendered_text(texture_creator, "PAUSED", &font, RED)?;
 
         let mut game_timer = GameTimer::new();
         game_timer.start();
@@ -132,16 +117,13 @@ impl<'a> Game<'a> {
             ghost_timer_target: 20000, // Start with chasing
             timed_status: false,
 
-            ghost_score_multiplier: 200, // First ghost worth 200
-            dead_ghosts_counter: 0,
+            ghosts_reversed_for_energizer: false,
+            collision_system: CollisionSystem::new(),
+            scoring_system: ScoringSystem::new(),
 
             ready_texture,
             game_over_texture,
             paused_texture,
-            little_score_timers: Vec::new(),
-            little_score_positions: Vec::new(),
-            little_score_values: Vec::new(),
-            little_timer_target: 1000, // 1 second for floating score
 
             level: 1,
 
@@ -414,7 +396,7 @@ impl<'a> Game<'a> {
             1 => {
                 self.board.score_increase(1);
                 self.pacman.change_energy_status(true);
-                self.ghost_score_multiplier = 200;
+                self.scoring_system.reset_for_energizer();
                 self.ghost_timer_target = self.scatter_time;
                 self.ghost_timer.restart();
                 // TODO: Play waka sound
@@ -425,106 +407,56 @@ impl<'a> Game<'a> {
 
     fn entity_collisions(&mut self) {
         if !self.pacman.is_energized() {
-            self.dead_ghosts_counter = 0;
+            self.scoring_system.reset_ghost_counter();
         }
         self.check_ghost_collisions();
     }
 
     fn check_ghost_collisions(&mut self) {
-        if !self.pacman.is_energized() {
-            if (self
-                .pacman
-                .is_colliding(self.blinky.get_ghost().entity.get_position())
-                && self.blinky.get_ghost().entity.is_alive())
-                || (self
-                    .pacman
-                    .is_colliding(self.inky.get_ghost().entity.get_position())
-                    && self.inky.get_ghost().entity.is_alive())
-                || (self
-                    .pacman
-                    .is_colliding(self.pinky.get_ghost().entity.get_position())
-                    && self.pinky.get_ghost().entity.is_alive())
-                || (self
-                    .pacman
-                    .is_colliding(self.clyde.get_ghost().entity.get_position())
-                    && self.clyde.get_ghost().entity.is_alive())
-            {
-                self.pacman.mod_life_statement(false);
-            }
-        } else {
-            let pacman_pos = self.pacman.get_position();
+        let collisions = self.collision_system.check_all_ghost_collisions(
+            &self.pacman,
+            &self.blinky,
+            &self.inky,
+            &self.pinky,
+            &self.clyde,
+            self.pacman.is_energized(),
+        );
 
-            if self
-                .pacman
-                .is_colliding(self.blinky.get_ghost().entity.get_position())
-                && self.blinky.get_ghost().entity.is_alive()
-            {
-                self.blinky.get_ghost_mut().entity.mod_life_statement(false);
-                self.board
-                    .score_increase_by_value(self.ghost_score_multiplier);
+        for collision in collisions {
+            match collision {
+                CollisionEvent::PacmanEatsGhost {
+                    ghost_type,
+                    position,
+                } => {
+                    // Handle Pacman eating a ghost
+                    match ghost_type {
+                        GhostType::Blinky => {
+                            self.blinky.get_ghost_mut().entity.mod_life_statement(false);
+                        }
+                        GhostType::Inky => {
+                            self.inky.get_ghost_mut().entity.mod_life_statement(false);
+                        }
+                        GhostType::Pinky => {
+                            self.pinky.get_ghost_mut().entity.mod_life_statement(false);
+                        }
+                        GhostType::Clyde => {
+                            self.clyde.get_ghost_mut().entity.mod_life_statement(false);
+                        }
+                    }
 
-                self.little_score_values.push(self.ghost_score_multiplier);
-                let mut timer = GameTimer::new();
-                timer.start();
-                self.little_score_timers.push(timer);
-                self.little_score_positions.push(pacman_pos);
-
-                self.ghost_score_multiplier *= 2;
-                self.dead_ghosts_counter += 1;
-            }
-            if self
-                .pacman
-                .is_colliding(self.inky.get_ghost().entity.get_position())
-                && self.inky.get_ghost().entity.is_alive()
-            {
-                self.inky.get_ghost_mut().entity.mod_life_statement(false);
-                self.board
-                    .score_increase_by_value(self.ghost_score_multiplier);
-
-                self.little_score_values.push(self.ghost_score_multiplier);
-                let mut timer = GameTimer::new();
-                timer.start();
-                self.little_score_timers.push(timer);
-                self.little_score_positions.push(pacman_pos);
-
-                self.ghost_score_multiplier *= 2;
-                self.dead_ghosts_counter += 1;
-            }
-            if self
-                .pacman
-                .is_colliding(self.pinky.get_ghost().entity.get_position())
-                && self.pinky.get_ghost().entity.is_alive()
-            {
-                self.pinky.get_ghost_mut().entity.mod_life_statement(false);
-                self.board
-                    .score_increase_by_value(self.ghost_score_multiplier);
-
-                self.little_score_values.push(self.ghost_score_multiplier);
-                let mut timer = GameTimer::new();
-                timer.start();
-                self.little_score_timers.push(timer);
-                self.little_score_positions.push(pacman_pos);
-
-                self.ghost_score_multiplier *= 2;
-                self.dead_ghosts_counter += 1;
-            }
-            if self
-                .pacman
-                .is_colliding(self.clyde.get_ghost().entity.get_position())
-                && self.clyde.get_ghost().entity.is_alive()
-            {
-                self.clyde.get_ghost_mut().entity.mod_life_statement(false);
-                self.board
-                    .score_increase_by_value(self.ghost_score_multiplier);
-
-                self.little_score_values.push(self.ghost_score_multiplier);
-                let mut timer = GameTimer::new();
-                timer.start();
-                self.little_score_timers.push(timer);
-                self.little_score_positions.push(pacman_pos);
-
-                self.ghost_score_multiplier *= 2;
-                self.dead_ghosts_counter += 1;
+                    // Award points and add floating score
+                    let score_value = self.scoring_system.add_ghost_score(position);
+                    self.board.score_increase_by_value(score_value);
+                }
+                CollisionEvent::GhostKillsPacman { ghost_type: _ } => {
+                    // Handle ghost killing Pacman
+                    self.pacman.mod_life_statement(false);
+                    // Only need to handle one death, so break after first
+                    break;
+                }
+                CollisionEvent::NoCollision => {
+                    // This shouldn't happen since we filter out NoCollision events
+                }
             }
         }
     }
@@ -542,7 +474,10 @@ impl<'a> Game<'a> {
             .entity
             .set_facing(Direction::Left);
         self.inky.get_ghost_mut().entity.set_facing(Direction::Up);
-        self.pinky.get_ghost_mut().entity.set_facing(Direction::Down);
+        self.pinky
+            .get_ghost_mut()
+            .entity
+            .set_facing(Direction::Down);
         self.clyde.get_ghost_mut().entity.set_facing(Direction::Up);
     }
 
@@ -559,10 +494,19 @@ impl<'a> Game<'a> {
         self.clear_mover();
         self.pacman.mod_dead_animation_statement(false);
         self.pacman.mod_life_statement(true);
+        self.pacman.change_energy_status(false);
+        self.pacman.reset_current_living_frame();
         self.board.decrease_lives();
+
+        self.reset_ghosts_life_statement();
+        self.reset_ghosts_facing();
+
         // TODO: Despawn fruit
         self.is_to_waka_sound = true;
         self.is_to_death_sound = true;
+
+        self.ghost_timer.restart();
+        self.ghost_timer.start();
     }
 
     fn clear_mover(&mut self) {
@@ -571,7 +515,7 @@ impl<'a> Game<'a> {
     }
 
     fn update_difficulty(&mut self) {
-        if self.level % 3 == 0 {
+        if self.level.is_multiple_of(3) {
             self.chasing_time += 1000; // Increase chase time by 1 second
             if self.scatter_time > 2000 {
                 self.scatter_time -= 1000; // Decrease scatter time by 1 second
@@ -580,17 +524,7 @@ impl<'a> Game<'a> {
     }
 
     fn draw_little_score(&mut self) {
-        let mut i = 0;
-        while i < self.little_score_timers.len() {
-            if self.little_score_timers[i].get_ticks() >= self.little_timer_target as u128 {
-                self.little_score_timers.remove(i);
-                self.little_score_positions.remove(i);
-                self.little_score_values.remove(i);
-            } else {
-                i += 1;
-            }
-        }
-
-        // TODO: Render remaining floating scores
+        self.scoring_system.update_little_scores();
+        // TODO: Render remaining floating scores using self.scoring_system.get_little_scores()
     }
 }

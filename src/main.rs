@@ -6,7 +6,6 @@ use std::time::{Duration, Instant};
 mod board;
 mod entity;
 mod game;
-mod game_state;
 mod position;
 mod texture;
 
