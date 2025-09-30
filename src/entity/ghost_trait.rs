@@ -1,3 +1,4 @@
+use crate::entity::Facing;
 use crate::board::{BlockType, Direction, EntityType};
 use crate::entity::{BaseEntity, Entity};
 use crate::entity::pacman::Pacman;
@@ -283,36 +284,23 @@ impl<'a> Ghost<'a> {
     pub fn update_facing(&mut self, pacman_is_energized: bool) {
         if self.is_home() {
             match self.entity.get_direction() {
-                Direction::Down => self.entity.mod_facing(3),
-                _ => self.entity.mod_facing(1),
+                Direction::Down => self.entity.set_facing(Direction::Down),
+                _ => self.entity.set_facing(Direction::Up),
             }
             return;
         }
 
         if pacman_is_energized {
             if !self.entity.is_alive() {
-                let facing = match self.entity.get_direction() {
-                    Direction::Right => 0,
-                    Direction::Up => 1,
-                    Direction::Left => 2,
-                    Direction::Down => 3,
-                    Direction::Nowhere => 0,
-                };
-                self.entity.mod_facing(facing);
+                self.entity.set_facing(self.entity.get_direction());
             } else {
-                self.entity.mod_facing(4);
+                // Set to scared facing (special case for energized ghosts)
+                self.entity.facing = Facing::Scared;
             }
             return;
         }
 
-        let facing = match self.entity.get_direction() {
-            Direction::Right => 0,
-            Direction::Up => 1,
-            Direction::Left => 2,
-            Direction::Down => 3,
-            Direction::Nowhere => 0,
-        };
-        self.entity.mod_facing(facing);
+        self.entity.set_facing(self.entity.get_direction());
     }
 
     pub fn calculate_direction(&mut self, actual_map: &[BlockType]) {
@@ -437,7 +425,7 @@ impl<'a> Ghost<'a> {
             self.body.render(canvas, x, y, Some(*body_clip))?;
         }
 
-        let eye_frame = self.entity.get_facing() as usize;
+        let eye_frame = self.entity.get_facing().as_u8() as usize;
         let eye_frame = if eye_frame >= GHOST_EYE_FRAMES {
             0
         } else {

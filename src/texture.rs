@@ -26,7 +26,7 @@ impl<'a> GameTexture<'a> {
         texture_creator: &'a TextureCreator<WindowContext>,
         path: &str,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        self.free();
+        self.reset();
 
         let surface: Surface = sdl2::image::LoadSurface::from_file(Path::new(path))
             .map_err(|e| format!("Unable to load image {}: {}", path, e))?;
@@ -47,7 +47,7 @@ impl<'a> GameTexture<'a> {
         font: &Font,
         color: Color,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        self.free();
+        self.reset();
 
         let text_surface = font
             .render(text)
@@ -63,7 +63,7 @@ impl<'a> GameTexture<'a> {
         Ok(())
     }
 
-    pub fn free(&mut self) {
+    pub fn reset(&mut self) {
         self.texture = None;
         self.width = 0;
         self.height = 0;

@@ -6,7 +6,7 @@ pub mod inky;
 pub mod pacman;
 pub mod pinky;
 
-pub use base_entity::*;
+pub use base_entity::{BaseEntity, Entity, Facing};
 pub use blinky::Blinky;
 pub use clyde::Clyde;
 pub use ghost_trait::*;

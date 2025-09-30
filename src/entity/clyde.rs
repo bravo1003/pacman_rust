@@ -20,7 +20,7 @@ impl<'a> Clyde<'a> {
             (17 * BLOCK_SIZE_24 + BLOCK_SIZE_24 / 2) as i16,
         );
         let color = ORANGE;
-        let ghost = Ghost::new(
+        let mut ghost = Ghost::new(
             color,
             EntityType::Clyde,
             scatter_target,
@@ -28,6 +28,7 @@ impl<'a> Clyde<'a> {
             texture_creator,
         )?;
 
+        ghost.entity.set_facing(Direction::Up);
         Ok(Clyde { ghost })
     }
 

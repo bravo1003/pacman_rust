@@ -1,5 +1,5 @@
 use crate::board::{Direction, EntityType};
-use crate::entity::{Ghost, GhostBehavior, GhostType};
+use crate::entity::{Entity, Ghost, GhostBehavior, GhostType};
 use crate::position::Position;
 use crate::{BLOCK_SIZE_24, PINK};
 
@@ -20,7 +20,7 @@ impl<'a> Pinky<'a> {
             (17 * BLOCK_SIZE_24 + BLOCK_SIZE_24 / 2) as i16,
         );
         let color = PINK;
-        let ghost = Ghost::new(
+        let mut ghost = Ghost::new(
             color,
             EntityType::Pinky,
             scatter_target,
@@ -28,6 +28,7 @@ impl<'a> Pinky<'a> {
             texture_creator,
         )?;
 
+        ghost.entity.set_facing(Direction::Down);
         Ok(Pinky { ghost })
     }
 

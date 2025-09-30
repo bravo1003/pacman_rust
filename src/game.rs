@@ -82,11 +82,13 @@ impl<'a> Game<'a> {
         let clyde_start = board.reset_position(crate::board::EntityType::Clyde);
         clyde.get_ghost_mut().entity.set_position(clyde_start);
 
+
+        let font = ttf_context.load_font("assets/emulogic.ttf", 24)?;
         let mut ready_texture = GameTexture::new();
         ready_texture.load_from_rendered_text(
             texture_creator,
             "READY!",
-            &ttf_context.load_font("assets/emulogic.ttf", 24)?,
+            &font,
             YELLOW,
         )?;
 
@@ -94,7 +96,7 @@ impl<'a> Game<'a> {
         game_over_texture.load_from_rendered_text(
             texture_creator,
             "GAME  OVER",
-            &ttf_context.load_font("assets/emulogic.ttf", 24)?,
+            &font,
             RED,
         )?;
 
@@ -102,7 +104,7 @@ impl<'a> Game<'a> {
         paused_texture.load_from_rendered_text(
             texture_creator,
             "PAUSED",
-            &ttf_context.load_font("assets/emulogic.ttf", 24)?,
+            &font,
             RED,
         )?;
 
@@ -539,7 +541,7 @@ impl<'a> Game<'a> {
             .entity
             .set_facing(Direction::Left);
         self.inky.get_ghost_mut().entity.set_facing(Direction::Up);
-        self.pinky.get_ghost_mut().entity.set_facing(Direction::Up);
+        self.pinky.get_ghost_mut().entity.set_facing(Direction::Down);
         self.clyde.get_ghost_mut().entity.set_facing(Direction::Up);
     }
 

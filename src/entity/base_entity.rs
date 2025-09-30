@@ -2,17 +2,41 @@ use crate::board::{BlockType, Direction, EntityType};
 use crate::position::Position;
 use crate::{BLOCK_SIZE_24, BOARD_WIDTH, WINDOW_WIDTH};
 
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum Facing {
+    Right = 0,
+    Up = 1,
+    Left = 2,
+    Down = 3,
+    Scared = 4,
+}
+
+impl Facing {
+    pub fn from_direction(direction: Direction) -> Self {
+        match direction {
+            Direction::Right => Facing::Right,
+            Direction::Up => Facing::Up,
+            Direction::Left => Facing::Left,
+            Direction::Down => Facing::Down,
+            Direction::Nowhere => Facing::Right, // Default to right
+        }
+    }
+
+    pub fn as_u8(self) -> u8 {
+        self as u8
+    }
+}
+
 pub trait Entity {
     fn new(identity: EntityType) -> Self;
     fn get_identity(&self) -> EntityType;
     fn get_speed(&self) -> u8;
     fn get_direction(&self) -> Direction;
-    fn get_facing(&self) -> u8;
+    fn get_facing(&self) -> Facing;
     fn is_alive(&self) -> bool;
 
     fn mod_speed(&mut self, new_speed: u8);
     fn mod_direction(&mut self, new_direction: Direction);
-    fn mod_facing(&mut self, new_facing: u8);
     fn mod_life_statement(&mut self, new_life_statement: bool);
 
     fn get_position(&self) -> Position;
@@ -37,7 +61,7 @@ pub struct BaseEntity {
     pub identity: EntityType,
     pub speed: u8,
     pub direction: Direction,
-    pub facing: u8,
+    pub facing: Facing,
     pub life_statement: bool,
 }
 
@@ -48,7 +72,7 @@ impl Entity for BaseEntity {
             identity,
             speed: 2,
             direction: Direction::Right,
-            facing: 0,
+            facing: Facing::Right,
             life_statement: true,
         }
     }
@@ -65,7 +89,7 @@ impl Entity for BaseEntity {
         self.direction
     }
 
-    fn get_facing(&self) -> u8 {
+    fn get_facing(&self) -> Facing {
         self.facing
     }
 
@@ -79,10 +103,6 @@ impl Entity for BaseEntity {
 
     fn mod_direction(&mut self, new_direction: Direction) {
         self.direction = new_direction;
-    }
-
-    fn mod_facing(&mut self, new_facing: u8) {
-        self.facing = new_facing;
     }
 
     fn mod_life_statement(&mut self, new_life_statement: bool) {
@@ -197,12 +217,6 @@ impl Entity for BaseEntity {
     }
 
     fn set_facing(&mut self, direction: Direction) {
-        self.facing = match direction {
-            Direction::Right => 0,
-            Direction::Up => 1,
-            Direction::Left => 2,
-            Direction::Down => 3,
-            Direction::Nowhere => self.facing,
-        };
+        self.facing = Facing::from_direction(direction);
     }
 }

@@ -1,3 +1,4 @@
+use crate::entity::Facing;
 use crate::board::{BlockType, Direction, EntityType};
 use crate::entity::{BaseEntity, Entity};
 use crate::position::Position;
@@ -146,13 +147,14 @@ impl<'a> Pacman<'a> {
     }
 
     fn set_facing(&mut self, mover: Direction) {
-        match mover {
-            Direction::Right => self.entity.mod_facing(0),
-            Direction::Up => self.entity.mod_facing(3),
-            Direction::Left => self.entity.mod_facing(2),
-            Direction::Down => self.entity.mod_facing(1),
-            Direction::Nowhere => {}
-        }
+        // Pacman has different facing mapping than ghosts
+        self.entity.facing = match mover {
+            Direction::Right => Facing::Right,
+            Direction::Up => Facing::Down,    // Pacman up sprite is index 3
+            Direction::Left => Facing::Left,
+            Direction::Down => Facing::Up,    // Pacman down sprite is index 1
+            Direction::Nowhere => self.entity.facing,
+        };
     }
 
     pub fn is_dead_animation_ended(&self) -> bool {
@@ -219,7 +221,7 @@ impl<'a> Pacman<'a> {
                 canvas,
                 (self.entity.get_x() - 4) as i32,
                 (self.entity.get_y() - 4) as i32,
-                self.entity.get_facing(),
+                self.entity.get_facing().as_u8(),
                 Some(*current_clip),
             )?;
         } else {
@@ -230,7 +232,7 @@ impl<'a> Pacman<'a> {
                 canvas,
                 (self.entity.get_x() - 4) as i32,
                 (self.entity.get_y() - 4) as i32,
-                self.entity.get_facing(),
+                self.entity.get_facing().as_u8(),
                 Some(*current_clip),
             )?;
 
