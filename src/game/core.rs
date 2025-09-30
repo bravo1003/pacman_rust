@@ -1,6 +1,7 @@
 use super::collision::{CollisionEvent, CollisionSystem, GhostType};
 use super::scoring::ScoringSystem;
 use super::state::{GameState, GameTimer};
+use super::timers::TimerSystem;
 use crate::board::{BlockType, Board, Direction};
 use crate::entity::pacman::Pacman;
 use crate::entity::{Blinky, Clyde, Entity, GhostBehavior, Inky, Pinky};
@@ -25,19 +26,8 @@ pub struct Game<'a> {
 
     game_state: GameState,
 
-    game_timer: GameTimer,
-    start_ticks: u32,
-
-    ghost_timer: GameTimer,
-    scatter_time: u32,
-    chasing_time: u32,
-    ghost_timer_target: u32,
-    timed_status: bool,
-
-    // Track if ghosts have been reversed for current energizer
-    ghosts_reversed_for_energizer: bool,
-
     // Game systems
+    timer_system: TimerSystem,
     collision_system: CollisionSystem,
     scoring_system: ScoringSystem,
 
@@ -94,8 +84,9 @@ impl<'a> Game<'a> {
         let mut paused_texture = GameTexture::new();
         paused_texture.load_from_rendered_text(texture_creator, "PAUSED", &font, RED)?;
 
-        let mut game_timer = GameTimer::new();
-        game_timer.start();
+        let mut timer_system = TimerSystem::new();
+        timer_system.set_start_ticks(2500); // 2.5 seconds before game starts
+        timer_system.start_game();
 
         Ok(Game {
             board,
@@ -108,16 +99,9 @@ impl<'a> Game<'a> {
             mover: vec![Direction::Right],
 
             game_state: GameState::Ready,
-            game_timer,
-            start_ticks: 2500, // 2.5 seconds before game starts
 
-            ghost_timer: GameTimer::new(),
-            scatter_time: 7000,        // 7 seconds scatter
-            chasing_time: 20000,       // 20 seconds chase
-            ghost_timer_target: 20000, // Start with chasing
-            timed_status: false,
+            timer_system,
 
-            ghosts_reversed_for_energizer: false,
             collision_system: CollisionSystem::new(),
             scoring_system: ScoringSystem::new(),
 
@@ -150,12 +134,12 @@ impl<'a> Game<'a> {
             Keycode::Space => match self.game_state {
                 GameState::Playing => {
                     self.game_state = GameState::Paused;
-                    self.ghost_timer.pause();
+                    self.timer_system.pause_all();
                     println!("Game paused");
                 }
                 GameState::Paused => {
                     self.game_state = GameState::Playing;
-                    self.ghost_timer.unpause();
+                    self.timer_system.unpause_all();
                     println!("Game resumed");
                 }
                 _ => {
@@ -175,7 +159,8 @@ impl<'a> Game<'a> {
     pub fn update(&mut self) -> bool {
         match self.game_state {
             GameState::Ready => {
-                if self.game_timer.get_ticks() >= self.start_ticks as u128 {
+                if self.timer_system.get_game_ticks() >= self.timer_system.get_start_ticks() as u128
+                {
                     self.start_game();
                 }
             }
@@ -195,8 +180,6 @@ impl<'a> Game<'a> {
             GameState::PacmanDeath => {
                 if self.pacman.is_dead_animation_ended() {
                     if self.board.get_lives() > 0 {
-                        self.reset_game_for_death();
-
                         let pacman_start =
                             self.board.reset_position(crate::board::EntityType::PacMan);
                         self.pacman.set_position(pacman_start);
@@ -220,8 +203,7 @@ impl<'a> Game<'a> {
                         self.clyde.get_ghost_mut().entity.set_position(clyde_start);
 
                         self.game_state = GameState::Ready;
-                        self.start_ticks = 2500;
-                        self.game_timer.restart();
+                        self.reset_game_for_death();
                     } else {
                         self.game_state = GameState::GameOver;
                         println!("Game Over!");
@@ -252,8 +234,8 @@ impl<'a> Game<'a> {
                 self.clyde.get_ghost_mut().entity.set_position(clyde_start);
 
                 self.game_state = GameState::Ready;
-                self.start_ticks = 2500;
-                self.game_timer.restart();
+                self.timer_system.set_start_ticks(2500);
+                self.timer_system.start_game();
                 println!("Starting level {}", self.level);
             }
             GameState::GameOver => {}
@@ -295,26 +277,26 @@ impl<'a> Game<'a> {
             self.blinky.get_ghost_mut().draw(
                 canvas,
                 self.pacman.is_energized(),
-                self.ghost_timer.get_ticks(),
-                self.ghost_timer_target,
+                self.timer_system.get_ghost_ticks(),
+                self.timer_system.get_ghost_timer_target(),
             )?;
             self.inky.get_ghost_mut().draw(
                 canvas,
                 self.pacman.is_energized(),
-                self.ghost_timer.get_ticks(),
-                self.ghost_timer_target,
+                self.timer_system.get_ghost_ticks(),
+                self.timer_system.get_ghost_timer_target(),
             )?;
             self.pinky.get_ghost_mut().draw(
                 canvas,
                 self.pacman.is_energized(),
-                self.ghost_timer.get_ticks(),
-                self.ghost_timer_target,
+                self.timer_system.get_ghost_ticks(),
+                self.timer_system.get_ghost_timer_target(),
             )?;
             self.clyde.get_ghost_mut().draw(
                 canvas,
                 self.pacman.is_energized(),
-                self.ghost_timer.get_ticks(),
-                self.ghost_timer_target,
+                self.timer_system.get_ghost_ticks(),
+                self.timer_system.get_ghost_timer_target(),
             )?;
 
             self.draw_little_score();
@@ -336,8 +318,8 @@ impl<'a> Game<'a> {
             self.reset_ghosts_facing();
             self.pacman.reset_current_living_frame();
 
-            self.ghost_timer.restart();
-            self.ghost_timer.start();
+            self.timer_system.restart_ghost_timer();
+            self.timer_system.start_ghost_timing();
 
             self.game_state = GameState::Playing;
             println!("Game started!");
@@ -352,18 +334,10 @@ impl<'a> Game<'a> {
     }
 
     fn clock(&mut self) {
-        if self.ghost_timer.get_ticks() > self.ghost_timer_target as u128 {
-            if self.ghost_timer_target == self.scatter_time {
-                if self.pacman.is_energized() {
-                    self.pacman.change_energy_status(false);
-                }
-                self.timed_status = false;
-                self.ghost_timer_target = self.chasing_time;
-                self.ghost_timer.restart();
-            } else if self.ghost_timer_target == self.chasing_time {
-                self.timed_status = true;
-                self.ghost_timer_target = self.scatter_time;
-                self.ghost_timer.restart();
+        if self.timer_system.update_ghost_timing() {
+            // Ghost mode changed, check if we need to end energizer
+            if !self.timer_system.is_scatter_mode() && self.pacman.is_energized() {
+                self.pacman.change_energy_status(false);
             }
         }
     }
@@ -371,18 +345,30 @@ impl<'a> Game<'a> {
     fn update_positions(&mut self) {
         let blinky_pos = self.blinky.get_ghost().entity.get_position();
 
-        self.blinky
-            .update_pos(&self.actual_map, &self.pacman, None, self.timed_status);
+        self.blinky.update_pos(
+            &self.actual_map,
+            &self.pacman,
+            None,
+            self.timer_system.is_scatter_mode(),
+        );
         self.inky.update_pos(
             &self.actual_map,
             &self.pacman,
             Some(blinky_pos),
-            self.timed_status,
+            self.timer_system.is_scatter_mode(),
         );
-        self.pinky
-            .update_pos(&self.actual_map, &self.pacman, None, self.timed_status);
-        self.clyde
-            .update_pos(&self.actual_map, &self.pacman, None, self.timed_status);
+        self.pinky.update_pos(
+            &self.actual_map,
+            &self.pacman,
+            None,
+            self.timer_system.is_scatter_mode(),
+        );
+        self.clyde.update_pos(
+            &self.actual_map,
+            &self.pacman,
+            None,
+            self.timer_system.is_scatter_mode(),
+        );
 
         self.pacman.update_pos(&mut self.mover, &self.actual_map);
     }
@@ -397,8 +383,7 @@ impl<'a> Game<'a> {
                 self.board.score_increase(1);
                 self.pacman.change_energy_status(true);
                 self.scoring_system.reset_for_energizer();
-                self.ghost_timer_target = self.scatter_time;
-                self.ghost_timer.restart();
+                self.timer_system.set_scatter_mode();
                 // TODO: Play waka sound
             }
             _ => {}
@@ -505,8 +490,13 @@ impl<'a> Game<'a> {
         self.is_to_waka_sound = true;
         self.is_to_death_sound = true;
 
-        self.ghost_timer.restart();
-        self.ghost_timer.start();
+        // Reset ghost timer and start ghost timing
+        self.timer_system.restart_ghost_timer();
+        self.timer_system.start_ghost_timing();
+
+        // Reset game timer for 2.5 second delay - order is important!
+        self.timer_system.set_start_ticks(2500);
+        self.timer_system.start_game();
     }
 
     fn clear_mover(&mut self) {
@@ -516,10 +506,7 @@ impl<'a> Game<'a> {
 
     fn update_difficulty(&mut self) {
         if self.level.is_multiple_of(3) {
-            self.chasing_time += 1000; // Increase chase time by 1 second
-            if self.scatter_time > 2000 {
-                self.scatter_time -= 1000; // Decrease scatter time by 1 second
-            }
+            self.timer_system.update_difficulty();
         }
     }
 
