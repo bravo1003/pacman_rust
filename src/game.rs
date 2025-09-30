@@ -1,7 +1,7 @@
 use crate::board::{BlockType, Board, Direction};
 use crate::entity::{Blinky, Clyde, Entity, GhostBehavior, Inky, Pinky};
 use crate::game_state::{GameState, GameTimer};
-use crate::pacman::Pacman;
+use crate::entity::pacman::Pacman;
 use crate::position::Position;
 use crate::texture::GameTexture;
 use crate::{BOARD_HEIGHT, BOARD_WIDTH, RED, YELLOW};

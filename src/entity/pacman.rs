@@ -190,6 +190,10 @@ impl<'a> Pacman<'a> {
         self.entity.get_position()
     }
 
+    pub fn get_direction(&self) -> Direction {
+        self.entity.get_direction()
+    }
+
     pub fn set_position(&mut self, position: Position) {
         self.entity.set_position(position);
     }
@@ -231,7 +235,7 @@ impl<'a> Pacman<'a> {
             )?;
 
             self.curr_death_pac_frame += 1;
-            if self.curr_death_pac_frame / DEATH_PAC_FRAMES as u8 >= DEATH_PAC_FRAMES as u8 {
+            if self.curr_death_pac_frame >= (DEATH_PAC_FRAMES * DEATH_PAC_FRAMES) as u8 {
                 self.dead_animation_statement = true;
                 self.curr_death_pac_frame = 0;
             }

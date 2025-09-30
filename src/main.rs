@@ -7,7 +7,6 @@ mod board;
 mod entity;
 mod game;
 mod game_state;
-mod pacman;
 mod position;
 mod texture;
 

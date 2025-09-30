@@ -1,6 +1,6 @@
 use crate::board::{BlockType, Direction, EntityType};
 use crate::entity::{BaseEntity, Entity};
-use crate::pacman::Pacman;
+use crate::entity::pacman::Pacman;
 use crate::position::Position;
 use crate::texture::GameTexture;
 use crate::{BLOCK_SIZE_24, BLOCK_SIZE_32, BLUE, RED, WHITE, WINDOW_WIDTH};
