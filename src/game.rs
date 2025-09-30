@@ -46,6 +46,7 @@ pub struct Game<'a> {
 
     level: u16,
 
+    #[allow(dead_code)]
     is_to_scatter_sound: bool,
     is_to_waka_sound: bool,
     is_to_death_sound: bool,

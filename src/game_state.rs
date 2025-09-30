@@ -41,6 +41,7 @@ impl GameTimer {
         self.pause_time = None;
     }
 
+    #[allow(dead_code)]
     pub fn reset(&mut self) {
         self.start_time = None;
         self.is_paused = false;
@@ -79,6 +80,7 @@ impl GameTimer {
         0
     }
 
+    #[allow(dead_code)]
     pub fn is_started(&self) -> bool {
         self.start_time.is_some()
     }

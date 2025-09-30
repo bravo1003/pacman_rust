@@ -17,6 +17,7 @@ impl Position {
         self.y
     }
 
+    #[allow(dead_code)]
     pub fn get_pos(&self) -> Position {
         *self
     }
@@ -29,11 +30,13 @@ impl Position {
         self.y = new_y;
     }
 
+    #[allow(dead_code)]
     pub fn mod_coords(&mut self, new_x: i16, new_y: i16) {
         self.x = new_x;
         self.y = new_y;
     }
 
+    #[allow(dead_code)]
     pub fn mod_pos(&mut self, new_pos: Position) {
         self.x = new_pos.x;
         self.y = new_pos.y;

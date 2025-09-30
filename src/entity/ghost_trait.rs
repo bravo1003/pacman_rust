@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use crate::entity::Facing;
 use crate::board::{BlockType, Direction, EntityType};
 use crate::entity::{BaseEntity, Entity};
@@ -10,7 +12,9 @@ use sdl2::rect::Rect;
 use sdl2::render::WindowCanvas;
 
 pub trait GhostBehavior<'a> {
+    #[allow(dead_code)]
     fn get_ghost_type(&self) -> GhostType;
+    #[allow(dead_code)]
     fn get_scatter_target(&self) -> Position;
     fn calculate_target(
         &mut self,
@@ -66,6 +70,7 @@ pub trait GhostBehavior<'a> {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
+#[allow(dead_code)]
 pub enum GhostType {
     Blinky,
     Pinky,

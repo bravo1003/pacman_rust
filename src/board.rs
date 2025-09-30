@@ -22,6 +22,7 @@ pub enum Direction {
     Up,
     Left,
     Down,
+    #[allow(dead_code)]
     Nowhere,
 }
 
@@ -32,6 +33,7 @@ pub enum EntityType {
     Inky,
     Pinky,
     Clyde,
+    #[allow(dead_code)]
     None,
 }
 
@@ -39,6 +41,7 @@ pub struct Board<'a> {
     numeric_board: [BlockType; BOARD_HEIGHT * BOARD_WIDTH],
     score: u32,
     lives: i8,
+    #[allow(dead_code)]
     is_extra: bool,
 
     map_texture: GameTexture<'a>,
@@ -164,6 +167,7 @@ impl<'a> Board<'a> {
         }
     }
 
+    #[allow(dead_code)]
     pub fn get_block_type(&self, x: usize, y: usize) -> BlockType {
         if x >= BOARD_WIDTH || y >= BOARD_HEIGHT {
             return BlockType::Wall;
@@ -249,6 +253,7 @@ impl<'a> Board<'a> {
         Ok(())
     }
 
+    #[allow(dead_code)]
     pub fn get_score(&self) -> u32 {
         self.score
     }

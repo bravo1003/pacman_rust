@@ -200,10 +200,12 @@ impl<'a> Pacman<'a> {
         self.entity.set_position(position);
     }
 
+    #[allow(dead_code)]
     pub fn get_x(&self) -> i16 {
         self.entity.get_x()
     }
 
+    #[allow(dead_code)]
     pub fn get_y(&self) -> i16 {
         self.entity.get_y()
     }

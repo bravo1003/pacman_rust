@@ -59,10 +59,12 @@ impl<'a> GhostBehavior<'a> for Blinky<'a> {
         self.ghost.target = pacman_pos;
     }
 
+    #[allow(dead_code)]
     fn get_can_use_door(&self) -> bool {
         self.ghost.can_use_door
     }
 
+    #[allow(dead_code)]
     fn set_can_use_door(&mut self, can_use_door: bool) {
         self.ghost.can_use_door = can_use_door;
     }
@@ -71,6 +73,7 @@ impl<'a> GhostBehavior<'a> for Blinky<'a> {
         &mut self.ghost
     }
 
+    #[allow(dead_code)]
     fn get_ghost(&self) -> &Ghost<'a> {
         &self.ghost
     }

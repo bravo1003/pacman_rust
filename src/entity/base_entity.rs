@@ -29,6 +29,7 @@ impl Facing {
 
 pub trait Entity {
     fn new(identity: EntityType) -> Self;
+    #[allow(dead_code)]
     fn get_identity(&self) -> EntityType;
     fn get_speed(&self) -> u8;
     fn get_direction(&self) -> Direction;
@@ -58,6 +59,7 @@ pub trait Entity {
 
 pub struct BaseEntity {
     pub position: Position,
+    #[allow(dead_code)]
     pub identity: EntityType,
     pub speed: u8,
     pub direction: Direction,

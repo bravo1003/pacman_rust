@@ -81,6 +81,7 @@ impl<'a> GameTexture<'a> {
         Ok(())
     }
 
+    #[allow(dead_code)]
     pub fn set_alpha(&mut self, alpha: u8) -> Result<(), Box<dyn std::error::Error>> {
         if let Some(ref mut texture) = self.texture {
             texture.set_alpha_mod(alpha);
@@ -127,10 +128,12 @@ impl<'a> GameTexture<'a> {
         Ok(())
     }
 
+    #[allow(dead_code)]
     pub fn get_width(&self) -> u32 {
         self.width
     }
 
+    #[allow(dead_code)]
     pub fn get_height(&self) -> u32 {
         self.height
     }
