@@ -1,9 +1,11 @@
-use crate::game::GameTimer;
+use crate::game::state::GameTimer;
 use crate::position::Position;
 
 #[derive(Debug)]
 pub struct LittleScore {
+    #[allow(dead_code)]
     pub position: Position,
+    #[allow(dead_code)]
     pub value: u16,
     pub timer: GameTimer,
 }
@@ -72,21 +74,25 @@ impl ScoringSystem {
     }
 
     /// Get current ghost score multiplier
+    #[allow(dead_code)]
     pub fn get_ghost_score_multiplier(&self) -> u16 {
         self.ghost_score_multiplier
     }
 
     /// Get number of dead ghosts
+    #[allow(dead_code)]
     pub fn get_dead_ghosts_counter(&self) -> u8 {
         self.dead_ghosts_counter
     }
 
     /// Get reference to little scores for rendering
+    #[allow(dead_code)]
     pub fn get_little_scores(&self) -> &[LittleScore] {
         &self.little_scores
     }
 
     /// Get number of active little scores
+    #[allow(dead_code)]
     pub fn get_little_scores_count(&self) -> usize {
         self.little_scores.len()
     }

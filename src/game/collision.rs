@@ -10,6 +10,7 @@ pub enum CollisionEvent {
         position: Position,
     },
     GhostKillsPacman {
+        #[allow(dead_code)]
         ghost_type: GhostType,
     },
     NoCollision,
@@ -23,6 +24,7 @@ pub enum GhostType {
     Clyde,
 }
 
+#[allow(dead_code)]
 #[derive(Debug)]
 pub enum FoodCollisionEvent {
     Nothing,
@@ -107,6 +109,7 @@ impl CollisionSystem {
     }
 
     /// Check food collision and return the type of food consumed
+    #[allow(dead_code)]
     pub fn check_food_collision<'a>(
         &self,
         pacman: &Pacman<'a>,

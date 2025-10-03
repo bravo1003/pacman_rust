@@ -36,6 +36,7 @@ impl<'a> Inky<'a> {
         &mut self.ghost
     }
 
+    #[allow(dead_code)]
     pub fn get_ghost(&self) -> &Ghost<'a> {
         &self.ghost
     }

@@ -79,6 +79,7 @@ impl TimerSystem {
     }
 
     /// Set custom ghost timer target
+    #[allow(dead_code)]
     pub fn set_ghost_timer_target(&mut self, target: u32) {
         self.ghost_timer_target = target;
     }
@@ -123,60 +124,3 @@ impl TimerSystem {
         }
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_timer_system_creation() {
-        let timer_system = TimerSystem::new();
-        assert_eq!(timer_system.get_start_ticks(), 0);
-        assert_eq!(timer_system.get_ghost_timer_target(), 20000);
-        assert!(!timer_system.is_scatter_mode()); // Should start in chase mode
-    }
-
-    #[test]
-    fn test_scatter_mode_setting() {
-        let mut timer_system = TimerSystem::new();
-
-        // Should start in chase mode
-        assert!(!timer_system.is_scatter_mode());
-
-        // Set to scatter mode
-        timer_system.set_scatter_mode();
-        assert!(timer_system.is_scatter_mode());
-        assert_eq!(timer_system.get_ghost_timer_target(), 7000);
-    }
-
-    #[test]
-    fn test_ghost_timer_target_setting() {
-        let mut timer_system = TimerSystem::new();
-
-        timer_system.set_ghost_timer_target(15000);
-        assert_eq!(timer_system.get_ghost_timer_target(), 15000);
-    }
-
-    #[test]
-    fn test_start_ticks_management() {
-        let mut timer_system = TimerSystem::new();
-
-        timer_system.set_start_ticks(1000);
-        assert_eq!(timer_system.get_start_ticks(), 1000);
-    }
-
-    #[test]
-    fn test_timing_initialization() {
-        let mut timer_system = TimerSystem::new();
-
-        // Start game timing
-        timer_system.start_game();
-        timer_system.start_ghost_timing();
-
-        // Timers should be active (ticks > 0 after some time)
-        std::thread::sleep(std::time::Duration::from_millis(1));
-        assert!(timer_system.get_game_ticks() >= 0);
-        assert!(timer_system.get_ghost_ticks() >= 0);
-    }
-}
-

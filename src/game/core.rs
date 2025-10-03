@@ -1,10 +1,11 @@
 use super::collision::{CollisionEvent, CollisionSystem, GhostType};
+use super::ghost_manager::GhostManager;
 use super::scoring::ScoringSystem;
-use super::state::{GameState, GameTimer};
+use super::state::GameState;
 use super::timers::TimerSystem;
 use crate::board::{BlockType, Board, Direction};
 use crate::entity::pacman::Pacman;
-use crate::entity::{Blinky, Clyde, Entity, GhostBehavior, Inky, Pinky};
+use crate::entity::Entity;
 use crate::texture::GameTexture;
 use crate::{BOARD_HEIGHT, BOARD_WIDTH, RED, YELLOW};
 use sdl2::keyboard::Keycode;
@@ -15,18 +16,12 @@ use sdl2::video::WindowContext;
 pub struct Game<'a> {
     board: Board<'a>,
     pacman: Pacman<'a>,
-
-    blinky: Blinky<'a>,
-    inky: Inky<'a>,
-    pinky: Pinky<'a>,
-    clyde: Clyde<'a>,
+    ghosts_manager: GhostManager<'a>,
 
     actual_map: [BlockType; BOARD_HEIGHT * BOARD_WIDTH],
     mover: Vec<Direction>,
 
     game_state: GameState,
-
-    // Game systems
     timer_system: TimerSystem,
     collision_system: CollisionSystem,
     scoring_system: ScoringSystem,
@@ -51,28 +46,17 @@ impl<'a> Game<'a> {
         let board = Board::new(texture_creator, ttf_context)?;
         let mut pacman = Pacman::new(texture_creator)?;
 
-        let mut blinky = Blinky::new(texture_creator)?;
-        let mut inky = Inky::new(texture_creator)?;
-        let mut pinky = Pinky::new(texture_creator)?;
-        let mut clyde = Clyde::new(texture_creator)?;
+        // Use ghosts manager for all ghosts
+        let mut ghost_manager = GhostManager::new(texture_creator)?;
 
         let mut actual_map = [BlockType::Nothing; BOARD_HEIGHT * BOARD_WIDTH];
         board.copy_board(&mut actual_map);
 
+        // Reset positions using ghosts manager
         let pacman_start = board.reset_position(crate::board::EntityType::PacMan);
         pacman.set_position(pacman_start);
 
-        let blinky_start = board.reset_position(crate::board::EntityType::Blinky);
-        blinky.get_ghost_mut().entity.set_position(blinky_start);
-
-        let inky_start = board.reset_position(crate::board::EntityType::Inky);
-        inky.get_ghost_mut().entity.set_position(inky_start);
-
-        let pinky_start = board.reset_position(crate::board::EntityType::Pinky);
-        pinky.get_ghost_mut().entity.set_position(pinky_start);
-
-        let clyde_start = board.reset_position(crate::board::EntityType::Clyde);
-        clyde.get_ghost_mut().entity.set_position(clyde_start);
+        ghost_manager.reset_all_ghost_positions(&board);
 
         let font = ttf_context.load_font("assets/emulogic.ttf", 24)?;
         let mut ready_texture = GameTexture::new();
@@ -91,10 +75,7 @@ impl<'a> Game<'a> {
         Ok(Game {
             board,
             pacman,
-            blinky,
-            inky,
-            pinky,
-            clyde,
+            ghosts_manager: ghost_manager,
             actual_map,
             mover: vec![Direction::Right],
 
@@ -180,27 +161,12 @@ impl<'a> Game<'a> {
             GameState::PacmanDeath => {
                 if self.pacman.is_dead_animation_ended() {
                     if self.board.get_lives() > 0 {
+                        // Reset positions using entity manager
                         let pacman_start =
                             self.board.reset_position(crate::board::EntityType::PacMan);
                         self.pacman.set_position(pacman_start);
 
-                        let blinky_start =
-                            self.board.reset_position(crate::board::EntityType::Blinky);
-                        self.blinky
-                            .get_ghost_mut()
-                            .entity
-                            .set_position(blinky_start);
-
-                        let inky_start = self.board.reset_position(crate::board::EntityType::Inky);
-                        self.inky.get_ghost_mut().entity.set_position(inky_start);
-
-                        let pinky_start =
-                            self.board.reset_position(crate::board::EntityType::Pinky);
-                        self.pinky.get_ghost_mut().entity.set_position(pinky_start);
-
-                        let clyde_start =
-                            self.board.reset_position(crate::board::EntityType::Clyde);
-                        self.clyde.get_ghost_mut().entity.set_position(clyde_start);
+                        self.ghosts_manager.reset_all_ghost_positions(&self.board);
 
                         self.game_state = GameState::Ready;
                         self.reset_game_for_death();
@@ -215,23 +181,11 @@ impl<'a> Game<'a> {
                 self.level += 1;
                 self.update_difficulty();
 
+                // Reset positions using entity manager
                 let pacman_start = self.board.reset_position(crate::board::EntityType::PacMan);
                 self.pacman.set_position(pacman_start);
 
-                let blinky_start = self.board.reset_position(crate::board::EntityType::Blinky);
-                self.blinky
-                    .get_ghost_mut()
-                    .entity
-                    .set_position(blinky_start);
-
-                let inky_start = self.board.reset_position(crate::board::EntityType::Inky);
-                self.inky.get_ghost_mut().entity.set_position(inky_start);
-
-                let pinky_start = self.board.reset_position(crate::board::EntityType::Pinky);
-                self.pinky.get_ghost_mut().entity.set_position(pinky_start);
-
-                let clyde_start = self.board.reset_position(crate::board::EntityType::Clyde);
-                self.clyde.get_ghost_mut().entity.set_position(clyde_start);
+                self.ghosts_manager.reset_all_ghost_positions(&self.board);
 
                 self.game_state = GameState::Ready;
                 self.timer_system.set_start_ticks(2500);
@@ -274,25 +228,8 @@ impl<'a> Game<'a> {
         }
 
         if self.game_state != GameState::LevelComplete {
-            self.blinky.get_ghost_mut().draw(
-                canvas,
-                self.pacman.is_energized(),
-                self.timer_system.get_ghost_ticks(),
-                self.timer_system.get_ghost_timer_target(),
-            )?;
-            self.inky.get_ghost_mut().draw(
-                canvas,
-                self.pacman.is_energized(),
-                self.timer_system.get_ghost_ticks(),
-                self.timer_system.get_ghost_timer_target(),
-            )?;
-            self.pinky.get_ghost_mut().draw(
-                canvas,
-                self.pacman.is_energized(),
-                self.timer_system.get_ghost_ticks(),
-                self.timer_system.get_ghost_timer_target(),
-            )?;
-            self.clyde.get_ghost_mut().draw(
+            // Use ghosts manager to draw all ghosts
+            self.ghosts_manager.draw_all_ghosts(
                 canvas,
                 self.pacman.is_energized(),
                 self.timer_system.get_ghost_ticks(),
@@ -314,8 +251,8 @@ impl<'a> Game<'a> {
             }
 
             self.pacman.change_energy_status(false);
-            self.reset_ghosts_life_statement();
-            self.reset_ghosts_facing();
+            self.ghosts_manager.reset_all_ghost_life_statements();
+            self.ghosts_manager.reset_all_ghost_facing();
             self.pacman.reset_current_living_frame();
 
             self.timer_system.restart_ghost_timer();
@@ -343,30 +280,10 @@ impl<'a> Game<'a> {
     }
 
     fn update_positions(&mut self) {
-        let blinky_pos = self.blinky.get_ghost().entity.get_position();
-
-        self.blinky.update_pos(
+        // Use entity manager to update all ghost positions
+        self.ghosts_manager.update_all_ghosts(
             &self.actual_map,
             &self.pacman,
-            None,
-            self.timer_system.is_scatter_mode(),
-        );
-        self.inky.update_pos(
-            &self.actual_map,
-            &self.pacman,
-            Some(blinky_pos),
-            self.timer_system.is_scatter_mode(),
-        );
-        self.pinky.update_pos(
-            &self.actual_map,
-            &self.pacman,
-            None,
-            self.timer_system.is_scatter_mode(),
-        );
-        self.clyde.update_pos(
-            &self.actual_map,
-            &self.pacman,
-            None,
             self.timer_system.is_scatter_mode(),
         );
 
@@ -384,6 +301,8 @@ impl<'a> Game<'a> {
                 self.pacman.change_energy_status(true);
                 self.scoring_system.reset_for_energizer();
                 self.timer_system.set_scatter_mode();
+                // Reverse all ghost directions when energizer is consumed
+                // self.ghosts_manager.reverse_all_ghost_directions();
                 // TODO: Play waka sound
             }
             _ => {}
@@ -400,10 +319,10 @@ impl<'a> Game<'a> {
     fn check_ghost_collisions(&mut self) {
         let collisions = self.collision_system.check_all_ghost_collisions(
             &self.pacman,
-            &self.blinky,
-            &self.inky,
-            &self.pinky,
-            &self.clyde,
+            &self.ghosts_manager.blinky,
+            &self.ghosts_manager.inky,
+            &self.ghosts_manager.pinky,
+            &self.ghosts_manager.clyde,
             self.pacman.is_energized(),
         );
 
@@ -416,16 +335,32 @@ impl<'a> Game<'a> {
                     // Handle Pacman eating a ghost
                     match ghost_type {
                         GhostType::Blinky => {
-                            self.blinky.get_ghost_mut().entity.mod_life_statement(false);
+                            self.ghosts_manager
+                                .blinky
+                                .get_ghost_mut()
+                                .entity
+                                .mod_life_statement(false);
                         }
                         GhostType::Inky => {
-                            self.inky.get_ghost_mut().entity.mod_life_statement(false);
+                            self.ghosts_manager
+                                .inky
+                                .get_ghost_mut()
+                                .entity
+                                .mod_life_statement(false);
                         }
                         GhostType::Pinky => {
-                            self.pinky.get_ghost_mut().entity.mod_life_statement(false);
+                            self.ghosts_manager
+                                .pinky
+                                .get_ghost_mut()
+                                .entity
+                                .mod_life_statement(false);
                         }
                         GhostType::Clyde => {
-                            self.clyde.get_ghost_mut().entity.mod_life_statement(false);
+                            self.ghosts_manager
+                                .clyde
+                                .get_ghost_mut()
+                                .entity
+                                .mod_life_statement(false);
                         }
                     }
 
@@ -446,26 +381,6 @@ impl<'a> Game<'a> {
         }
     }
 
-    fn reset_ghosts_life_statement(&mut self) {
-        self.blinky.get_ghost_mut().entity.mod_life_statement(true);
-        self.inky.get_ghost_mut().entity.mod_life_statement(true);
-        self.pinky.get_ghost_mut().entity.mod_life_statement(true);
-        self.clyde.get_ghost_mut().entity.mod_life_statement(true);
-    }
-
-    fn reset_ghosts_facing(&mut self) {
-        self.blinky
-            .get_ghost_mut()
-            .entity
-            .set_facing(Direction::Left);
-        self.inky.get_ghost_mut().entity.set_facing(Direction::Up);
-        self.pinky
-            .get_ghost_mut()
-            .entity
-            .set_facing(Direction::Down);
-        self.clyde.get_ghost_mut().entity.set_facing(Direction::Up);
-    }
-
     fn is_level_completed(&self) -> bool {
         for &block in &self.actual_map {
             if block == BlockType::Pellet || block == BlockType::Energizer {
@@ -483,8 +398,8 @@ impl<'a> Game<'a> {
         self.pacman.reset_current_living_frame();
         self.board.decrease_lives();
 
-        self.reset_ghosts_life_statement();
-        self.reset_ghosts_facing();
+        self.ghosts_manager.reset_all_ghost_life_statements();
+        self.ghosts_manager.reset_all_ghost_facing();
 
         // TODO: Despawn fruit
         self.is_to_waka_sound = true;
