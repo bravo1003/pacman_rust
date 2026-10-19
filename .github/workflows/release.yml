@@ -1,0 +1,105 @@
+name: Release
+
+# Pushing a `v*` tag builds the self-contained binaries and publishes them as
+# a GitHub release. Running the workflow by hand only builds them.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: linux-x86_64
+            os: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+          - name: macos-aarch64
+            os: macos-14
+            target: aarch64-apple-darwin
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install SDL2 build dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            cmake libasound2-dev libpulse-dev libpipewire-0.3-dev libdbus-1-dev libudev-dev \
+            libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxfixes-dev \
+            libxi-dev libxss-dev libxkbcommon-dev libwayland-dev wayland-protocols \
+            libegl1-mesa-dev libgl1-mesa-dev libgles2-mesa-dev libdrm-dev libgbm-dev \
+            xvfb
+
+      - name: Install Rust
+        run: |
+          rustup update stable --no-self-update
+          rustup default stable
+          rustup target add ${{ matrix.target }}
+
+      - name: Test
+        run: cargo test --release --target ${{ matrix.target }}
+
+      - name: Build
+        run: cargo build --release --target ${{ matrix.target }}
+
+      - name: Smoke test
+        shell: bash
+        run: |
+          bin=target/${{ matrix.target }}/release/rust_pacman
+          if [ "$RUNNER_OS" = Linux ]; then
+            ldd "$bin"
+            # Runs until killed; exit status 124 means it was still running.
+            status=0
+            SDL_AUDIODRIVER=dummy timeout 5 xvfb-run -a "$bin" || status=$?
+            [ "$status" -eq 124 ]
+          else
+            otool -L "$bin"
+            SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy "$bin" &
+            sleep 5
+            kill -0 $!
+            kill $!
+          fi
+
+      - name: Package
+        shell: bash
+        run: |
+          package="rust_pacman-${GITHUB_REF_NAME}-${{ matrix.name }}"
+          mkdir "$package"
+          cp target/${{ matrix.target }}/release/rust_pacman README.md "$package/"
+          tar -czf "$package.tar.gz" "$package"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.name }}
+          path: rust_pacman-*.tar.gz
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cat > notes.md <<'EOF'
+          Self-contained builds: SDL2 is linked in and every asset is embedded.
+
+          - **linux-x86_64**: needs glibc 2.35 or newer (Ubuntu 22.04, Debian 12 and later) and X11 or Wayland. Sound uses PulseAudio, PipeWire or ALSA when available.
+          - **macos-aarch64**: Apple silicon, macOS 11 or newer. The binary is not notarized, so after extracting run `xattr -d com.apple.quarantine rust_pacman` once, or open it from Finder with right-click > Open.
+
+          Move with the arrow keys or WASD. The high score is saved to `HighScore.txt` in the working directory.
+          EOF
+          gh release create "$GITHUB_REF_NAME" rust_pacman-*.tar.gz \
+            --repo "$GITHUB_REPOSITORY" --title "$GITHUB_REF_NAME" --notes-file notes.md
