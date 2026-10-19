@@ -1,0 +1,7 @@
+[env]
+# The SDL2 sources bundled by sdl2-sys declare an ancient cmake_minimum_required,
+# which CMake 4 refuses without this override.
+CMAKE_POLICY_VERSION_MINIMUM = "3.5"
+# Compile the bundled SDL2 for the same macOS release as the Rust code, rather
+# than for the SDK's, so the binary runs on older macOS versions too.
+MACOSX_DEPLOYMENT_TARGET = "11.0"
